@@ -1,0 +1,10 @@
+Changes
+Makefile.PL
+MANIFEST
+README
+GPL.txt
+LGPL.txt
+t/EAFDSS-Base.t
+lib/EAFDSS/Base.pm
+lib/EAFDSS/Micrelec.pm
+lib/EAFDSS/SDNP.pm

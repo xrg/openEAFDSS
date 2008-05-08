@@ -1,0 +1,75 @@
+# EAFDSS - Electronic Fiscal Signature Devices Library
+#          Ειδική Ασφαλής Φορολογική Διάταξη Σήμανσης (ΕΑΦΔΣΣ)
+#
+# Copyright (C) 2008 Hasiotis Nikos
+#
+# ID: $Id$
+
+package EAFDSS::Micrelec;
+
+use 5.006001;
+use strict;
+use warnings;
+use base qw(EAFDSS::Base);
+use Data::Dumper;
+use Carp;
+
+our @ISA = qw(EAFDSS::Base);
+our $VERSION = '0.10';
+
+sub new {
+	my($class) = shift @_;
+	my($self)  = $class->SUPER::new(@_);
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[new]");
+
+	return $self;
+}
+
+sub GetSign {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	my($chunk);
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[Sign]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "{/0");
+	if ($reply{OPCODE} == 0x22) {
+		while (read($fh, $chunk, 400)) {
+			my(%reply) = $self->SendRequest(0x21, 0x00, "@/$chunk");
+		}
+	}
+	%reply = $self->SendRequest(0x21, 0x00, "}");
+	my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
+
+	return $sign;
+}
+
+# Preloaded methods go here.
+
+1;
+=head1 NAME
+
+EAFDSS::Micrelec - base class for all other Micrelec classes
+
+=head1 DESCRIPTION
+
+Nothing to describe nor to document here. Read EAFDSS::SDNP on how to use the module.
+
+=head1 VERSION
+
+This is version 0.10.
+
+=head1 AUTHOR
+
+Hasiotis Nikos, E<lt>hasiotis@gmail.comE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2008 by Hasiotis Nikos
+
+This library is free software; you can redistribute it and/or modify
+it under the terms of the LGPL or the same terms as Perl itself,
+either Perl version 5.8.8 or, at your option, any later version of
+Perl 5 you may have available.
+
+=cut
