@@ -44,6 +44,117 @@ sub GetSign {
 	return $sign;
 }
 
+sub SetHeader {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[SetHeader]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "H/0/HEADER LINE 1/0/HEADER LINE 2/0/HEADER LINE 3/0/HEADER LINE 4/0/HEADER LINE 5/0/HEADER LINE 6");
+
+	return %reply; 
+}
+
+sub GetStatus {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[GetStatus]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "?");
+
+	return %reply; 
+}
+
+sub GetHeader {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[GetHeader]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "h");
+
+	return %reply; 
+}
+
+sub ReadTime {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[ReadTime]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "t");
+
+	return %reply; 
+}
+
+sub ReadDeviceID {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[ReadDeviceID]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "a");
+
+	return %reply; 
+}
+
+sub VersionInfo {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "v");
+
+	return %reply; 
+}
+
+sub DisplayMessage {
+	my($self) = shift @_;
+	my($msg)   = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "7/1/$msg/");
+
+	return %reply; 
+}
+
+sub BeginBlock {
+
+}
+
+sub SignBlock {
+
+}
+
+sub EndBlock {
+
+}
+
+sub CancelBlock {
+
+}
+
+sub ReadSignEntry {
+
+}
+
+sub ReadClosure {
+
+}
+
+sub ReadSummary {
+
+}
+
+sub IssueReport {
+
+}
+
+sub FiscalRepByZ {
+
+}
+
+sub FiscalRepByDate {
+
+}
+
+
 # Preloaded methods go here.
 
 1;
