@@ -82,10 +82,11 @@ sub sdnpSync {
 	
 	# For at least 6 times do:
 	my($try);
+	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= -.100};
+	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
 		# Set timer T0 to 500 milliseconds;
-		local $SIG{ALRM} = sub { $self->_Debug($self->{LEVEL}{DEBUG}, "    !! Timer alarm"); $self->{_T0} = 0 };
-		$self->{_T0} = 1; setitimer(ITIMER_REAL, 0.500);
+		$self->{_T0} = 1;
 		
 		# Select a random initial FSN (IFSN); 
 		$self->{_FSN} = int(rand(32768) + 1);
@@ -122,10 +123,11 @@ sub sdnpSync {
 						$self->{_SYNC} = 1;
 
 						# Set connection SYNC timer to 4 seconds;
-						$self->{_TSYNC} = 1; setitimer(ITIMER_REAL, 4);
+						$self->{_TSYNC} = 1;
 
 						# Return sync success;
-						$self->{_T0} = 0; setitimer(ITIMER_REAL, 0);
+						$self->{_T0} = 0;
+						setitimer(ITIMER_REAL, 0, 0);
 						return 1;
 					} 
 				} else {
@@ -135,7 +137,8 @@ sub sdnpSync {
 		}
 	}
 
-	$self->{_TIMER} = 0; setitimer(ITIMER_REAL, 0);
+	$self->{_TIMER} = 0;
+	setitimer(ITIMER_REAL, 0, 0);
 	return 0;
 }
 
@@ -149,6 +152,8 @@ sub SendRequest {
 
 	# For at least 6 times do:
 	my($try);
+	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= -.100};
+	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
 		$self->_Debug($self->{LEVEL}{DEBUG}, "    Send Request try #%d", $try);
 		SYNC:
@@ -166,8 +171,7 @@ sub SendRequest {
 		$self->{_SOCKET}->send($msg);
 
 		# Set T0 timer to 800 milliseconds;
-		local $SIG{ALRM} = sub { $self->_Debug($self->{LEVEL}{DEBUG}, "    !! Timer alarm"); $self->{_T0} = 0 };
-		$self->{_T0} = 1; setitimer(ITIMER_REAL, 0.800);
+		$self->{_T0} = 1;
 		
 		# Do until T0 expires:
 		while ($self->{_T0}) {
@@ -217,12 +221,13 @@ sub SendRequest {
 							next;
 						} else {
 							# Renew connection's SYNC timer;
-							$self->{_TSYNC} = 1; setitimer(ITIMER_REAL, 4);
+							$self->{_TSYNC} = 1;
 
 							# Advance connection's NextFSN by one;
 							$self->{_FSN}++;
 
 							# Return request transmittion success;
+							setitimer(ITIMER_REAL, 0, 0);
 							return %reply;
 						}
 					}
@@ -236,6 +241,7 @@ sub SendRequest {
 	}
 
 	# Return request transmittion failure;
+	setitimer(ITIMER_REAL, 0, 0);
 	return %reply;
 }
 

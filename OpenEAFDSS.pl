@@ -63,21 +63,18 @@ sub exitDialog {
 			-title     => "[ Are you sure? ]", 
 			-buttons   => ['yes', 'no'],
 			-fg        => 'gray',
-			-bg        => 'blue',
+			-bg        => 'black',
 			-tfg       => 'black',
-			-tbg       => 'white',
-			-bfg       => 'red',
-			-bbg       => 'red',
-			-sfg       => 'red',
-			-sfg       => 'red',
+			-tbg       => 'cyan',
+			-bfg       => 'blue',
+			-bbg       => 'black',
 		);
 	exit(0) if $return;
 }
 
 sub getStatusDialog {
-	#my($FD) = new EAFDSS::SDNP(DIR => "/tmp/SIGNS", SN => "ABC02000001", IP => "miles");
-	#%reply = $FD->GetStatus();
-	#$cui->dialog("Raw Status: " . $reply{DATA});
-	$cui->dialog("Raw Status: ");
+	my($FD) = new EAFDSS::SDNP(DIR => "/tmp/SIGNS", SN => "ABC02000001", IP => "miles");
+	%reply = $FD->GetStatus();
+	$cui->dialog("Raw Status: " . $reply{DATA});
 }
 
