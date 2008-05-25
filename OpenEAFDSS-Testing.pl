@@ -2,6 +2,7 @@
 
 use lib "EAFDSS/lib";
 use EAFDSS::SDNP; 
+use Digest::SHA1  qw(sha1_hex);
 use Data::Dumper;
 
 my($FD) = new EAFDSS::SDNP(
@@ -11,26 +12,20 @@ my($FD) = new EAFDSS::SDNP(
 		#DEBUG => 3
 	);
 
-#printf("           SIGN --> [%s]\n", $FD->Sign("invoice.txt"));
+my($totalSigns, $dailySigns, $date, $time, $sign) = $FD->Sign("invoice.txt");
+printf("    SIGN --> [%s]\n", $sign);
 
-my(%x) = $FD->GetStatus();
-printf("         STATUS --> [%s]\n", $x{DATA});
+$data = "";
+open(FILE, 'invoice.txt') or die $!;
+foreach (<FILE>) {
+	$data .= $_; 
+}
 
-%x = $FD->SetHeader();
-printf("     SET HEADER --> [%s]\n", $x{DATA});
+$date =~ s/(\d\d)(\d\d)(\d\d)/$3$2$1/;
+$time =~ s/(\d\d)(\d\d)(\d\d)/$1$2/;
+$extra_data .= sprintf("ABC02000001%08d%04d%s%s", $totalSigns, $dailySigns, $date, $time);
+$data .= $extra_data;
 
-#%x = $FD->GetHeader();
-#printf("     GET HEADER --> [%s]\n", $x{DATA});
+printf("  VERIFY --> [%s]\n", uc(sha1_hex($data)));
 
-%x = $FD->ReadTime();
-printf("      Read TIME --> [%s]\n", $x{DATA});
-
-%x = $FD->ReadDeviceID();
-printf(" Read Device ID --> [%s]\n", $x{DATA});
-
-%x = $FD->VersionInfo();
-printf("   Version Info --> [%s]\n", $x{DATA});
-
-%x = $FD->DisplayMessage("Hallo");
-printf("Display Message --> [%s]\n", $x{DATA});
 
