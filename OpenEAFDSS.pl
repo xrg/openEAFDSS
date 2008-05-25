@@ -163,26 +163,12 @@ sub settingsDialog {
 		-maxlength => 11,
 	);
 
-	my($btnBox) = $winSettings->add(
-		"btnBox", "Buttonbox" ,
-		-y => -1,
-		-buttons => [
-			{ -label    => '< OK >',
-			  -shortcut => 'o',
-			  -value    => 1,
-			  -onpress  => \&settingsOK },
-			{ -label    => '< Cancel >',
-			  -shortcut => 'c',
-			  -value    => 0,
-			  -onpress  => \&settingsCancel}
-		],
-		-buttonalignment => 'middle'
-	);
+	my($settingsCancel) = sub {
+		$winSettings->loose_focus();
+		$cui->delete('winSettings');
+	};
 
-	$btnBox->focus();
-	$winSettings->modalfocus();
-
-	sub settingsOK {
+	my($settingsOK) = sub {
 		my($curDeviceID) = $txtDeviceID->get();
 		my($curSignsDir) = $txtSignaturesDir->get();
 		my($curIpAddress) = $txtAddressIP->get(); 
@@ -196,13 +182,26 @@ sub settingsDialog {
 
 		$winSettings->loose_focus();
 		$cui->delete('winSettings');
-	}
+	};
 
-	sub settingsCancel {
-		$winSettings->loose_focus();
-		$cui->delete('winSettings');
-	}
+	my($btnBox) = $winSettings->add(
+		"btnBox", "Buttonbox" ,
+		-y => -1,
+		-buttons => [
+			{ -label    => '< OK >',
+			  -shortcut => 'o',
+			  -value    => 1,
+			  -onpress  => $settingsOK },
+			{ -label    => '< Cancel >',
+			  -shortcut => 'c',
+			  -value    => 0,
+			  -onpress  => $settingsCancel}
+		],
+		-buttonalignment => 'middle'
+	);
 
+	$btnBox->focus();
+	$winSettings->modalfocus();
 }
 
 
