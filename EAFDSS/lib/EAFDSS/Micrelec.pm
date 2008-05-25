@@ -41,7 +41,7 @@ sub GetSign {
 	%reply = $self->SendRequest(0x21, 0x00, "}");
 	my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
 
-	return $sign;
+	return ( $totalSigns, $dailySigns, $date, $time, $sign);
 }
 
 sub SetHeader {
