@@ -229,7 +229,7 @@ sub getStatusDialog {
 sub setHeadersDialog {
 	my($winSetHeaders) = $cui->add(
 		'winSetHeaders', 'Window',
-		-width          => 60,
+		-width          => 84,
 		-height         => 23,
 		-border         => 1,
 		-padtop         => 2,
@@ -239,61 +239,35 @@ sub setHeadersDialog {
 		-ipad           => 1
 	);
 
-	my($lblHeader01) = $winSetHeaders->add(
-		"lHeader01", "Label", -text   => "    Header Line #1: ",
-		-x      => 2, -y      => 1,
-		-height => 1, -width  => 20,
-		-maxlength => 11, -textalignment => 'right',
-	);
-	my($txtHeader01) = $winSetHeaders->add(
-		"txtHeader01", "TextEntry", -text   => "",
-		-fg     => 'black', -bg     => 'cyan',
-		-x      => 25, -y      => 1,
-		-height => 1, -width  => 12,
-		-maxlength => 11,
-	);
-
-	my($lblHeader02) = $winSetHeaders->add(
-		"lHeader02", "Label", -text   => "    Header Line #2: ",
-		-x      => 2, -y      => 2,
-		-height => 1, -width  => 20,
-		-maxlength => 11, -textalignment => 'right',
-	);
-	my($txtHeader02) = $winSetHeaders->add(
-		"txtHeader02", "TextEntry", -text   => "",
-		-fg     => 'black', -bg     => 'cyan',
-		-x      => 25, -y      => 2,
-		-height => 1, -width  => 12,
-		-maxlength => 11,
-	);
-
-	my($lblHeader03) = $winSetHeaders->add(
-		"lHeader03", "Label", -text   => "    Header Line #3: ",
-		-x      => 2, -y      => 3,
-		-height => 1, -width  => 20,
-		-maxlength => 11, -textalignment => 'right',
-	);
-	my($txtHeader03) = $winSetHeaders->add(
-		"txtHeader03", "TextEntry", -text   => "",
-		-fg     => 'black', -bg     => 'cyan',
-		-x      => 25, -y      => 3,
-		-height => 1, -width  => 12,
-		-maxlength => 11,
-	);
-
-	my($lblHeader04) = $winSetHeaders->add(
-		"lHeader04", "Label", -text   => "    Header Line #4: ",
-		-x      => 2, -y      => 4,
-		-height => 1, -width  => 20,
-		-maxlength => 11, -textalignment => 'right',
-	);
-	my($txtHeader04) = $winSetHeaders->add(
-		"txtHeader04", "TextEntry", -text   => "",
-		-fg     => 'black', -bg     => 'cyan',
-		-x      => 25, -y      => 4,
-		-height => 1, -width  => 12,
-		-maxlength => 11,
-	);
+	my($i, @lblHeader, @txtHeader, @lblFont, @txtFont);
+	for ($i = 1; $i < 6; $i++) {
+		$lblHeader[$i] = $winSetHeaders->add(
+			"lHeader$i", "Label", -text   => "Header Line #$i: ",
+			-x      => 1, -y      => $i*2,
+			-height => 1, -width  => 16,
+			-maxlength => 11, -textalignment => 'right',
+		);
+		$txtHeader[$i] = $winSetHeaders->add(
+			"txtHeader$i", "TextEntry", -text   => "",
+			-fg     => 'black', -bg     => 'cyan',
+			-x      => 18, -y      => $i*2,
+			-height => 1, -width  => 30,
+			-maxlength => 11,
+		);
+		$txtFont[$i] = $winSetHeaders->add(
+			"txtFont$i", "Listbox", 
+			-values    => [1, 2, 3, 4],
+			-labels    => { 1 => 'Normal Printing', 
+					2 => 'Double height', 
+					3 => 'Double width', 
+					4 => 'Double width/height'},
+			-selected   => $curDebug,
+			-fg     => 'white', -bg     => 'black',
+			-x      => 52, -y      => $i*2,
+			-height => 1, -width  => 20,
+			-maxlength => 11,
+		);
+	}
 
 	my($setHeadersCancel) = sub {
 		$winSetHeaders->loose_focus();
