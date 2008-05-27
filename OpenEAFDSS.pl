@@ -42,6 +42,7 @@ my($menuFile) = [
 	{ -label => ' Exit      ^Q', -value => \&exitDialog     }
 ];
 my($menuActions) = [
+	{ -label => ' Sign File      ', -value => \&signFileDialog       },
 	{ -label => ' Get Status     ', -value => \&getStatusDialog      },
 	{ -label => ' Set Headers    ', -value => \&setHeadersDialog     },
 	{ -label => ' Get Headers    ', -value => \&getHeadersDialog     },
@@ -89,14 +90,19 @@ sub exitDialog {
 			-message   => "Do you really want to quit?",
 			-title     => "[ Are you sure? ]", 
 			-buttons   => ['yes', 'no'],
-			-fg        => 'gray',
-			-bg        => 'black',
-			-tfg       => 'black',
-			-tbg       => 'cyan',
-			-bfg       => 'blue',
-			-bbg       => 'black',
 		);
 	exit(0) if $return;
+}
+
+sub signFileDialog {
+	my($file) = $cui->filebrowser();
+	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+	my($totalSigns, $dailySigns, $date, $time, $sign) = $FD->Sign($file);
+	$cui->dialog(
+		-title => "Signature",
+		-message => $sign,
+		-x => 30, -y => 20
+	)
 }
 
 sub settingsDialog {
@@ -220,10 +226,23 @@ sub settingsDialog {
 
 sub getStatusDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	%reply = $FD->GetStatus();
+	my($replyCode, $status1, $status2) = $FD->GetStatus();
+	my($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery) = $FD->devStatus($status1);
+	my($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull) = $FD->appStatus($status2);
 	$cui->dialog(
 		-title => "Device Status",
-		-message => sprintf("[%s]    ", $reply{DATA})
+		-message => sprintf("     Reply Code: 0x%02x", $replyCode) . "\n" .
+		            sprintf("  Reply Message: %s",     $FD->errMessage($replyCode)) . "\n\n" .
+		            sprintf("  Device Status: %08b           App Status: %08b", $status1, $status2) . "\n" .
+		            sprintf("  -----------------------           --------------------", $status1, $status2) . "\n" .
+		            sprintf("               Busy: %b                      Day Open: %b", $busy,    $day)        . "\n" .
+		            sprintf("        Fatal error: %b         Signature in progress: %b", $fatal,   $signature)  . "\n" .
+		            sprintf("          Paper end: %b          Recovery in progress: %b", $paper,   $recovery)   . "\n" .
+		            sprintf("         CMOS reset: %b                Fiscal warning: %b", $cmos,    $fiscalWarn) . "\n" .
+		            sprintf("     Printer online: %b               Daily file full: %b", $printer, $dailyFull)  . "\n" .
+		            sprintf("        User access: %b                   Fiscal full: %b", $user,    $fiscalFull) . "\n" .
+		            sprintf("      Fiscal online: %b                                  ", $fiscal) . "\n" .
+		            sprintf("       Battery good: %b                                  ", $battery) 
 	);
 }
 
@@ -417,9 +436,7 @@ sub aboutDialog {
 	$cui->dialog(
 		-title => "About OpenEAFDSS",
 		-message =>
-			"OpenEAFDSS ver 0.10                                                  " . "\n" .
-			"                                                                     " . "\n" .
-			"Copyright (C) 2008 by Hasiotis Nikos                                 " . "\n" .
+			"OpenEAFDSS ver 0.10 -- Copyright (C) 2008 by Hasiotis Nikos          " . "\n" .
 			"                                                                     " . "\n" .
 			"This program is free software: you can redistribute it and/or modify " . "\n" .
 			"it under the terms of the GNU General Public License as published by " . "\n" .
