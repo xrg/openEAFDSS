@@ -102,8 +102,9 @@ sub exitDialog {
 sub settingsDialog {
 	my($winSettings) = $cui->add(
 		'winSettings', 'Window',
+		-title		=> 'Device Settings',
 		-width          => 60,
-		-height         => 23,
+		-height         => 24,
 		-border         => 1,
 		-padtop         => 2,
 		-padbottom      => 2,
@@ -229,8 +230,9 @@ sub getStatusDialog {
 sub setHeadersDialog {
 	my($winSetHeaders) = $cui->add(
 		'winSetHeaders', 'Window',
+		-title		=> 'Set Headers',
 		-width          => 84,
-		-height         => 23,
+		-height         => 24,
 		-border         => 1,
 		-padtop         => 2,
 		-padbottom      => 2,
@@ -240,7 +242,7 @@ sub setHeadersDialog {
 	);
 
 	my($i, @lblHeader, @txtHeader, @lblFont, @txtFont);
-	for ($i = 1; $i < 6; $i++) {
+	for ($i = 1; $i <= 6; $i++) {
 		$lblHeader[$i] = $winSetHeaders->add(
 			"lHeader$i", "Label", -text   => "Header Line #$i: ",
 			-x      => 1, -y      => $i*2,
@@ -275,15 +277,20 @@ sub setHeadersDialog {
 	};
 
 	my($setHeadersOK) = sub {
-		$winSetHeaders->loose_focus();
-		$cui->delete('winSetHeaders');
-
 		my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-		%reply = $FD->SetHeader();
+		my($headersPacked) = "";
+		for ($i = 1; $i <= 6; $i++) {
+			$headersPacked .= sprintf("%s/%s/", $txtFont[$i]->get(), $txtHeader[$i]->get());
+		}
+		%reply = $FD->SetHeader($headersPacked);
 		$cui->dialog(
 			-title => "Set Headers",
-			-message => sprintf("[%s]    ", $reply{DATA})
+			-message => sprintf("[%s]    ", $reply{DATA}),
+			-x => 30, -y => 20
 		);
+
+		$winSetHeaders->loose_focus();
+		$cui->delete('winSetHeaders');
 	};
 
 	my($btnBox) = $winSetHeaders->add(
@@ -343,10 +350,88 @@ sub versionInfoDialog {
 }
 
 sub displayMessageDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	%reply = $FD->DisplayMessage("Hallo mitso");
+	my($winDisplayMessage) = $cui->add(
+		'winDisplayMessage', 'Window',
+		-title		=> 'Display Message',
+		-width          => 70,
+		-height         => 14,
+		-border         => 1,
+		-padtop         => 2,
+		-padbottom      => 2,
+		-padleft        => 2,
+		-padright       => 2,
+		-ipad           => 1,
+	);
+
+	my($lblMessage) = $winDisplayMessage->add(
+		"lMessage", "Label", -text   => "Device Message: ",
+		-x      => 2, -y      => 1,
+		-height => 1, -width  => 20,
+	);
+	my($txtMessage) = $winDisplayMessage->add(
+		"Message", "TextEntry", -text   => "OpenEAFDSS",
+		-fg     => 'black', -bg     => 'cyan',
+		-x      => 2, -y      => 2,
+		-height => 1, -width  => 50,
+		-maxlength => 50,
+	);
+
+	my($displayMessageCancel) = sub {
+		$winDisplayMessage->loose_focus();
+		$cui->delete('winDisplayMessage');
+	};
+
+	my($displayMessageOK) = sub {
+		my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+		%reply = $FD->DisplayMessage($txtMessage->get());
+		$cui->dialog(
+			-title => "Device Message",
+			-message => sprintf("[%s]    ", $reply{DATA})
+		);
+
+		$winDisplayMessage->loose_focus();
+		$cui->delete('winDisplayMessage');
+	};
+
+	my($btnBox) = $winDisplayMessage->add(
+		"btnBox", "Buttonbox" ,
+		-y => -1,
+		-buttons => [
+			{ -label    => '< OK >',
+			  -shortcut => 'o',
+			  -value    => 1,
+			  -onpress  => $displayMessageOK},
+			{ -label    => '< Cancel >',
+			  -shortcut => 'c',
+			  -value    => 0,
+			  -onpress  => $displayMessageCancel}
+		],
+		-buttonalignment => 'middle'
+	);
+
+	$btnBox->focus();
+	$winDisplayMessage->modalfocus();
+}
+
+sub aboutDialog {
 	$cui->dialog(
-		-title => "Device Message",
-		-message => sprintf("[%s]    ", $reply{DATA})
+		-title => "About OpenEAFDSS",
+		-message =>
+			"OpenEAFDSS ver 0.10                                                  " . "\n" .
+			"                                                                     " . "\n" .
+			"Copyright (C) 2008 by Hasiotis Nikos                                 " . "\n" .
+			"                                                                     " . "\n" .
+			"This program is free software: you can redistribute it and/or modify " . "\n" .
+			"it under the terms of the GNU General Public License as published by " . "\n" .
+			"the Free Software Foundation, either version 3 of the License, or    " . "\n" .
+			"(at your option) any later version.                                  " . "\n" .
+			"                                                                     " . "\n" .
+			"This program is distributed in the hope that it will be useful,      " . "\n" .
+			"but WITHOUT ANY WARRANTY; without even the implied warranty of       " . "\n" .
+			"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the        " . "\n" .
+			"GNU General Public License for more details.                         " . "\n" .
+			"                                                                     " . "\n" .
+			"You should have received a copy of the GNU General Public License    " . "\n" .
+			"along with this program.  If not, see <http://www.gnu.org/licenses/>." 
 	);
 }

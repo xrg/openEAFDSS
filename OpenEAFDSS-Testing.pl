@@ -8,8 +8,8 @@ use Data::Dumper;
 my($FD) = new EAFDSS::SDNP(
 		DIR   => "/tmp/SIGNS",
 		SN    => "ABC02000001",
-		IP    => "miles",
-		#DEBUG => 3
+		IP    => "roadrunner",
+		DEBUG => 3
 	);
 
 my($totalSigns, $dailySigns, $date, $time, $sign) = $FD->Sign("invoice.txt");
