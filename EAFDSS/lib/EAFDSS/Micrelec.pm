@@ -39,9 +39,12 @@ sub GetSign {
 		}
 	}
 	%reply = $self->SendRequest(0x21, 0x00, "}");
-	my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
-
-	return ( $totalSigns, $dailySigns, $date, $time, $sign);
+	if (%reply) { 
+		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
+		return ( $totalSigns, $dailySigns, $date, $time, $sign);
+	} else {
+		return ( 0, 0, 0, 0, 0);
+	}
 }
 
 sub SetHeader {

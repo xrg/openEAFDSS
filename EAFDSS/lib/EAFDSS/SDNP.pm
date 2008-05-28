@@ -85,6 +85,8 @@ sub sdnpSync {
 	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= -.100};
 	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
+		$self->_Debug($self->{LEVEL}{DEBUG}, "    Send Sync Request try #%d", $try);
+
 		# Set timer T0 to 500 milliseconds;
 		$self->{_T0} = 1;
 		
@@ -97,7 +99,7 @@ sub sdnpSync {
 		$self->{_SOCKET}->send($msg);
 
 		# Do until T0 expires:
-		while ($self->{_T0}) {
+		while ($self->{_T0} > 0) {
 			my(%reply)  = ();
 			my($frame)  = undef;
 
@@ -139,6 +141,7 @@ sub sdnpSync {
 
 	$self->{_TIMER} = 0;
 	setitimer(ITIMER_REAL, 0, 0);
+
 	return 0;
 }
 
@@ -155,12 +158,15 @@ sub SendRequest {
 	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= -.100};
 	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
+		my(%reply)  = ();
 		$self->_Debug($self->{LEVEL}{DEBUG}, "    Send Request try #%d", $try);
 		SYNC:
 		# If state is UNSYNCHRONIZED or connection SYNC timer expired then:
 		if (1) {
-			if (! $self->sdnpSync()) {
+			if ( $self->sdnpSync() == 0) {
 				$self->_Debug($self->{LEVEL}{DEBUG}, "        Sync Failed");
+				setitimer(ITIMER_REAL, 0, 0);
+				return %reply;
 			}
 		}
 
@@ -174,8 +180,7 @@ sub SendRequest {
 		$self->{_T0} = 1;
 		
 		# Do until T0 expires:
-		while ($self->{_T0}) {
-			my(%reply)  = ();
+		while ($self->{_T0} > 0) {
 			my($frame)  = undef;
 
 			$self->{_SOCKET}->recv($frame, 512);
