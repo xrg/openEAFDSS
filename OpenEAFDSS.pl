@@ -432,6 +432,22 @@ sub displayMessageDialog {
 	$winDisplayMessage->modalfocus();
 }
 
+sub browseDialog {
+	$cui->dialog("TODO");
+}
+
+sub validateDialog {
+	$cui->dialog("TODO");
+}
+
+sub checkDialog {
+	$cui->dialog("TODO");
+}
+
+sub helpDialog {
+	$cui->dialog("TODO");
+}
+
 sub aboutDialog {
 	$cui->dialog(
 		-title => "About OpenEAFDSS",
