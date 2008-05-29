@@ -41,9 +41,9 @@ sub GetSign {
 	%reply = $self->SendRequest(0x21, 0x00, "}");
 	if (%reply) { 
 		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
-		return ( $totalSigns, $dailySigns, $date, $time, $sign);
+		return ($totalSigns, $dailySigns, $date, $time, $sign);
 	} else {
-		return ( 0, 0, 0, 0, 0);
+		return (-1, 0, 0, 0, 0);
 	}
 }
 
@@ -109,41 +109,56 @@ sub DisplayMessage {
 	my($msg)  = shift @_;
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "7/1/$msg/");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "7/1/$msg");
 
 	return %reply; 
 }
 
 sub ReadSignEntry {
+	my($self)  = shift @_;
+	my($index) = shift @_;
 
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "\$/$index");
+
+	return %reply; 
 }
 
 sub ReadClosure {
+	my($self)  = shift @_;
+	my($index) = shift @_;
 
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "R/$index");
+
+	return %reply; 
 }
 
 sub ReadSummary {
+	my($self)  = shift @_;
 
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
+
+	return %reply; 
 }
 
 sub IssueReport {
+	my($self)  = shift @_;
 
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "x/2/0");
+
+	return %reply; 
 }
-
-sub FiscalRepByZ {
-
-}
-
-sub FiscalRepByDate {
-
-}
-
 
 sub errMessage {
 	my($self)    = shift @_;
 	my($errCode) = shift @_;
 
-	if ($errCode == 0x00) {
+	if ($errCode == -1) {
+		return("Device not accessible", "Check the network");
+	} elsif ($errCode == 0x00) {
 		return("No errors - success", "None");
 	} elsif ($errCode == 0x01) {
 		return("Wrong number of fields", "Check the command's field count");

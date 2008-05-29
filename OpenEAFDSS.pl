@@ -43,6 +43,7 @@ my($menuFile) = [
 ];
 my($menuActions) = [
 	{ -label => ' Sign File      ', -value => \&signFileDialog       },
+	{ -label => ' Issue Z Report ', -value => \&issueReportDialog    },
 	{ -label => ' Get Status     ', -value => \&getStatusDialog      },
 	{ -label => ' Set Headers    ', -value => \&setHeadersDialog     },
 	{ -label => ' Get Headers    ', -value => \&getHeadersDialog     },
@@ -103,6 +104,15 @@ sub signFileDialog {
 		-message => $sign,
 		-x => 30, -y => 20
 	)
+}
+
+sub issueReportDialog {
+	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+	%reply = $FD->IssueReport();
+	$cui->dialog(
+		-title => "Get Headers",
+		-message => sprintf("[%s]    ", $reply{DATA})
+	);
 }
 
 sub settingsDialog {
