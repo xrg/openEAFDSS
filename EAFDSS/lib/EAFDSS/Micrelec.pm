@@ -53,9 +53,9 @@ sub SetHeader {
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[SetHeader]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "H/$headers");
-	my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
+	my($replyCode) = split(/\//, $reply{DATA});
 
-	return (hex($replyCode), hex($status1), hex($status2));
+	return (hex($replyCode));
 }
 
 sub GetStatus {
@@ -73,8 +73,12 @@ sub GetHeader {
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[GetHeader]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "h");
-
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2, @header) = split(/\//, $reply{DATA});
+		return (hex($replyCode), @header);
+	} else {
+		return (-1);
+	}
 }
 
 sub ReadTime {
