@@ -257,6 +257,9 @@ sub getStatusDialog {
 }
 
 sub setHeadersDialog {
+	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+	my($reply, @header) = $FD->GetHeader();
+
 	my($winSetHeaders) = $cui->add(
 		'winSetHeaders', 'Window',
 		-title		=> 'Set Headers',
@@ -279,7 +282,7 @@ sub setHeadersDialog {
 			-maxlength => 11, -textalignment => 'right',
 		);
 		$txtHeader[$i] = $winSetHeaders->add(
-			"txtHeader$i", "TextEntry", -text   => "",
+			"txtHeader$i", "TextEntry", -text   => $header[$i*2-1],
 			-fg     => 'black', -bg     => 'cyan',
 			-x      => 18, -y      => $i*2,
 			-height => 1, -width  => 30,
@@ -292,7 +295,7 @@ sub setHeadersDialog {
 					2 => 'Double height', 
 					3 => 'Double width', 
 					4 => 'Double width/height'},
-			-selected   => $curDebug,
+			-selected   => $header[$i*2-2],
 			-fg     => 'white', -bg     => 'black',
 			-x      => 52, -y      => $i*2,
 			-height => 1, -width  => 20,
@@ -306,17 +309,24 @@ sub setHeadersDialog {
 	};
 
 	my($setHeadersOK) = sub {
-		my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
 		my($headersPacked) = "";
 		for ($i = 1; $i <= 6; $i++) {
 			$headersPacked .= sprintf("%s/%s/", $txtFont[$i]->get(), $txtHeader[$i]->get());
 		}
-		%reply = $FD->SetHeader($headersPacked);
-		$cui->dialog(
-			-title => "Set Headers",
-			-message => sprintf("[%s]    ", $reply{DATA}),
-			-x => 30, -y => 20
-		);
+		my($reply, @header) = $FD->SetHeader($headersPacked);
+		if ($reply == 0) {
+			$cui->dialog(
+				-title => "Set Headers",
+				-message => sprintf("[%s]    ", $reply{DATA}),
+				-x => 30, -y => 20
+			);
+		} else {
+			my($curError, $curFixProposal) = $FD->errMessage($reply);
+			$cui->dialog(
+				-title => "Error getting headers",
+				-message => $curError 
+			);
+		}
 
 		$winSetHeaders->loose_focus();
 		$cui->delete('winSetHeaders');
@@ -344,11 +354,24 @@ sub setHeadersDialog {
 
 sub getHeadersDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	%reply = $FD->GetHeader();
-	$cui->dialog(
-		-title => "Get Headers",
-		-message => sprintf("[%s]    ", $reply{DATA})
-	);
+	my($reply, @header) = $FD->GetHeader();
+	if ($reply == 0) {
+		my($i, $header) = (0, "");
+		for ($i=0; $i < 12; $i+=2) {
+			$header .= "  Line #" . ($i/2+1) . " : " . $header[$i+1] . "\n";
+		}
+
+		$cui->dialog(
+			-title => "Get Headers",
+			-message => $header
+		);
+	} else {
+		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		$cui->dialog(
+			-title => "Error getting headers",
+			-message => $curError 
+		);
+	}
 }
 
 sub readTimeDialog {
