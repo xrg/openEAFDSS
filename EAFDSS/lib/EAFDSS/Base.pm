@@ -81,6 +81,23 @@ sub Sign {
 	# Create A, B, C Files
 }
 
+sub FullSign {
+	my($self)  = shift @_;
+	my($fname) = shift @_;
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Sign]");
+	if (-e $fname) {
+		$self->_Debug($self->{LEVEL}{DEBUG}, "  Signing file [%s]", $fname);
+		open(FH, $fname);
+		return $self->GetFullSign(*FH);
+	} else {
+		$self->_Debug($self->{LEVEL}{DEBUG}, "  No such file [%s]", $fname);
+		return -1;
+	}
+
+	# Create A, B, C Files
+}
+
 sub DESTROY {
 	my($self) = shift;
 	#printfv("Destroying %s %s",  $self, $self->name );

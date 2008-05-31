@@ -98,21 +98,38 @@ sub exitDialog {
 sub signFileDialog {
 	my($file) = $cui->filebrowser();
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($totalSigns, $dailySigns, $date, $time, $sign) = $FD->Sign($file);
-	$cui->dialog(
-		-title => "Signature",
-		-message => $sign,
-		-x => 30, -y => 20
-	)
+	my($reply, $sign) = $FD->FullSign($file);
+	if ($reply == 0) {
+		$cui->dialog(
+			-title => "Signature",
+			-message => $sign,
+			-x => 30, -y => 20
+		)
+	} else {
+		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		$cui->dialog(
+			-title => "Error signing file",
+			-message => $curError 
+		)
+	}
 }
 
 sub issueReportDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	%reply = $FD->IssueReport();
-	$cui->dialog(
-		-title => "Get Headers",
-		-message => sprintf("[%s]    ", $reply{DATA})
-	);
+	my($reply) = $FD->IssueReport();
+	if ($reply == 0) {
+		my($reply, $z) = $FD->ReadClosure(0);
+		$cui->dialog(
+			-title => "Get Headers",
+			-message => sprintf("%s", $z)
+		);
+	} else {
+		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		$cui->dialog(
+			-title => "Error producing Z report",
+			-message => $curError 
+		)
+	}
 }
 
 sub settingsDialog {
@@ -199,10 +216,10 @@ sub settingsDialog {
 	};
 
 	my($settingsOK) = sub {
-		my($curDeviceID) = $txtDeviceID->get();
-		my($curSignsDir) = $txtSignaturesDir->get();
-		my($curIpAddress) = $txtAddressIP->get(); 
-		my($curDebug) = $txtDebug->get(); 
+		$curDeviceID = $txtDeviceID->get();
+		$curSignsDir = $txtSignaturesDir->get();
+		$curIpAddress = $txtAddressIP->get(); 
+		$curDebug = $txtDebug->get(); 
 
 		$cfg->setval("MAIN", 'DeviceID', $curDeviceID);
 		$cfg->setval("MAIN", 'SignsDir', $curSignsDir);
@@ -236,9 +253,16 @@ sub settingsDialog {
 
 sub getStatusDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+
 	my($replyCode, $status1, $status2) = $FD->GetStatus();
+	if ($replyCode != 0) {
+		$status1 = "00000000";
+		$status2 = "00000000";
+	}
+
 	my($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery) = $FD->devStatus($status1);
 	my($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull) = $FD->appStatus($status2);
+
 	$cui->dialog(
 		-title => "Device Status",
 		-message => sprintf("     Reply Code: 0x%02x", $replyCode) . "\n" .
@@ -274,19 +298,19 @@ sub setHeadersDialog {
 	);
 
 	my($i, @lblHeader, @txtHeader, @lblFont, @txtFont);
-	for ($i = 1; $i <= 6; $i++) {
+	for ($i=0; $i < 12; $i+=2) {
 		$lblHeader[$i] = $winSetHeaders->add(
-			"lHeader$i", "Label", -text   => "Header Line #$i: ",
-			-x      => 1, -y      => $i*2,
+			"lHeader$i", "Label", -text   => sprintf("Header Line #%d: ", ($i/2+1)),
+			-x      => 1, -y      => $i+1,
 			-height => 1, -width  => 16,
 			-maxlength => 11, -textalignment => 'right',
 		);
 		$txtHeader[$i] = $winSetHeaders->add(
-			"txtHeader$i", "TextEntry", -text   => $header[$i*2-1],
+			"txtHeader$i", "TextEntry", -text   => $header[$i+1],
 			-fg     => 'black', -bg     => 'cyan',
-			-x      => 18, -y      => $i*2,
-			-height => 1, -width  => 30,
-			-maxlength => 11,
+			-x      => 18, -y      => $i+1,
+			-height => 1, -width  => 33,
+			-maxlength => 32,
 		);
 		$txtFont[$i] = $winSetHeaders->add(
 			"txtFont$i", "Listbox", 
@@ -295,9 +319,9 @@ sub setHeadersDialog {
 					2 => 'Double height', 
 					3 => 'Double width', 
 					4 => 'Double width/height'},
-			-selected   => $header[$i*2-2],
+			-selected   => $header[$i]-1,
 			-fg     => 'white', -bg     => 'black',
-			-x      => 52, -y      => $i*2,
+			-x      => 52, -y      => $i+1,
 			-height => 1, -width  => 20,
 			-maxlength => 11,
 		);
@@ -309,15 +333,18 @@ sub setHeadersDialog {
 	};
 
 	my($setHeadersOK) = sub {
+		$winSetHeaders->loose_focus();
+		$cui->delete('winSetHeaders');
+
 		my($headersPacked) = "";
-		for ($i = 1; $i <= 6; $i++) {
+		for ($i=0; $i < 12; $i+=2) {
 			$headersPacked .= sprintf("%s/%s/", $txtFont[$i]->get(), $txtHeader[$i]->get());
 		}
 		my($reply, @header) = $FD->SetHeader($headersPacked);
 		if ($reply == 0) {
 			$cui->dialog(
 				-title => "Set Headers",
-				-message => sprintf("[%s]    ", $reply{DATA}),
+				-message => "Headers updated",
 				-x => 30, -y => 20
 			);
 		} else {
@@ -327,9 +354,6 @@ sub setHeadersDialog {
 				-message => $curError 
 			);
 		}
-
-		$winSetHeaders->loose_focus();
-		$cui->delete('winSetHeaders');
 	};
 
 	my($btnBox) = $winSetHeaders->add(
@@ -358,7 +382,7 @@ sub getHeadersDialog {
 	if ($reply == 0) {
 		my($i, $header) = (0, "");
 		for ($i=0; $i < 12; $i+=2) {
-			$header .= "  Line #" . ($i/2+1) . " : " . $header[$i+1] . "\n";
+			$header .= "  Line #" . ($i/2+1) . " : (" . $header[$i]. ")[" . $header[$i+1] . "]\n";
 		}
 
 		$cui->dialog(
@@ -376,29 +400,57 @@ sub getHeadersDialog {
 
 sub readTimeDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	%reply = $FD->ReadTime();
-	$cui->dialog(
-		-title => "Device Time",
-		-message => sprintf("[%s]    ", $reply{DATA})
-	);
+	my($reply, $devTime) = $FD->ReadTime();
+	if ($reply == 0) {
+		$cui->dialog(
+			-title => "Device Time",
+			-message => $devTime,
+			-x => 30, -y => 20
+		)
+	} else {
+		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		$cui->dialog(
+			-title => "Error reading time",
+			-message => $curError 
+		)
+	}
+
 }
 
 sub readDeviceIdDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	%reply = $FD->ReadDeviceID();
-	$cui->dialog(
-		-title => "Device ID",
-		-message => sprintf("[%s]    ", $reply{DATA})
-	);
+	my($reply, $devID) = $FD->ReadDeviceID();
+	if ($reply == 0) {
+		$cui->dialog(
+			-title => "Device ID",
+			-message => $devID,
+			-x => 30, -y => 20
+		)
+	} else {
+		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		$cui->dialog(
+			-title => "Error reading device id",
+			-message => $curError 
+		)
+	}
 }
 
 sub versionInfoDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	%reply = $FD->VersionInfo();
-	$cui->dialog(
-		-title => "Device Version",
-		-message => sprintf("[%s]    ", $reply{DATA})
-	);
+	my($reply, $version) = $FD->VersionInfo();
+	if ($reply == 0) {
+		$cui->dialog(
+			-title => "Device Info",
+			-message => $version,
+			-x => 30, -y => 20
+		)
+	} else {
+		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		$cui->dialog(
+			-title => "Error reading version info",
+			-message => $curError 
+		)
+	}
 }
 
 sub displayMessageDialog {
@@ -434,15 +486,24 @@ sub displayMessageDialog {
 	};
 
 	my($displayMessageOK) = sub {
-		my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-		%reply = $FD->DisplayMessage($txtMessage->get());
-		$cui->dialog(
-			-title => "Device Message",
-			-message => sprintf("[%s]    ", $reply{DATA})
-		);
-
 		$winDisplayMessage->loose_focus();
 		$cui->delete('winDisplayMessage');
+
+		my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+		my($reply, $version) = $FD->DisplayMessage($txtMessage->get());
+		if ($reply == 0) {
+			$cui->dialog(
+				-title => "Device Message",
+				-message => "Message Sent",
+				-x => 30, -y => 20
+			)
+		} else {
+			my($curError, $curFixProposal) = $FD->errMessage($reply);
+			$cui->dialog(
+				-title => "Error reading version info",
+				-message => $curError 
+			)
+		}
 	};
 
 	my($btnBox) = $winDisplayMessage->add(

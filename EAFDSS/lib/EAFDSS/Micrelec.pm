@@ -26,6 +26,19 @@ sub new {
 	return $self;
 }
 
+sub GetFullSign {
+	my($self) = shift @_;
+	my($fh)   = shift @_;
+
+	my($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign($fh);
+
+	if ($reply == 0) {
+		return ($reply, sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN}));
+	} else {
+		return (-1);
+	}
+}
+
 sub GetSign {
 	my($self) = shift @_;
 	my($fh)   = shift @_;
@@ -33,17 +46,17 @@ sub GetSign {
 	my($chunk);
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[Sign]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "{/0");
-	if ($reply{OPCODE} == 0x22) {
+	if ( %reply && ($reply{OPCODE} == 0x22) ) {
 		while (read($fh, $chunk, 400)) {
 			my(%reply) = $self->SendRequest(0x21, 0x00, "@/$chunk");
 		}
+		%reply = $self->SendRequest(0x21, 0x00, "}");
 	}
-	%reply = $self->SendRequest(0x21, 0x00, "}");
 	if (%reply) { 
 		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
-		return ($totalSigns, $dailySigns, $date, $time, $sign);
+		return ($replyCode, $totalSigns, $dailySigns, $date, $time, $sign);
 	} else {
-		return (-1, 0, 0, 0, 0);
+		return (-1);
 	}
 }
 
@@ -53,9 +66,13 @@ sub SetHeader {
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[SetHeader]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "H/$headers");
-	my($replyCode) = split(/\//, $reply{DATA});
 
-	return (hex($replyCode));
+	if (%reply) {
+		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
+		return (hex($replyCode));
+	} else {
+		return (-1);
+	}
 }
 
 sub GetStatus {
@@ -63,9 +80,13 @@ sub GetStatus {
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[GetStatus]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "?");
-	my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
 
-	return (hex($replyCode), hex($status1), hex($status2));
+	if (%reply) {
+		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
+		return (hex($replyCode), hex($status1), hex($status2));
+	} else {
+		return (-1);
+	}
 }
 
 sub GetHeader {
@@ -75,6 +96,11 @@ sub GetHeader {
 	my(%reply) = $self->SendRequest(0x21, 0x00, "h");
 	if (%reply) {
 		my($replyCode, $status1, $status2, @header) = split(/\//, $reply{DATA});
+		my($i);
+		for ($i=0; $i < 12; $i+=2) {
+			$header[$i+1] =~ s/\s*$//;
+		}
+
 		return (hex($replyCode), @header);
 	} else {
 		return (-1);
@@ -87,7 +113,18 @@ sub ReadTime {
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[ReadTime]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "t");
 
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2, $date, $time) = split(/\//, $reply{DATA});
+		my($day) = substr($date, 0, 2);
+		my($month) = substr($date, 2, 2);
+		my($year) = substr($date, 4, 2);
+		my($hour) = substr($time, 0, 2);
+		my($min) = substr($time, 2, 2);
+		my($sec) = substr($time, 4, 2);
+		return (hex($replyCode), sprintf("%s/%s/%s %s:%s:%s", $day, $month, $year, $hour, $min, $sec ));
+	} else {
+		return (-1);
+	}
 }
 
 sub ReadDeviceID {
@@ -96,7 +133,12 @@ sub ReadDeviceID {
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[ReadDeviceID]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "a");
 
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2, $deviceId) = split(/\//, $reply{DATA});
+		return (hex($replyCode), $deviceId);
+	} else {
+		return (-1);
+	}
 }
 
 sub VersionInfo {
@@ -105,7 +147,12 @@ sub VersionInfo {
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "v");
 
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2, $vendor, $model, $version) = split(/\//, $reply{DATA});
+		return (hex($replyCode), sprintf("%s %s version %s", $vendor, $model, $version));
+	} else {
+		return (-1);
+	}
 }
 
 sub DisplayMessage {
@@ -115,7 +162,12 @@ sub DisplayMessage {
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "7/1/$msg");
 
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
+		return (hex($replyCode));
+	} else {
+		return (-1);
+	}
 }
 
 sub ReadSignEntry {
@@ -125,7 +177,12 @@ sub ReadSignEntry {
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "\$/$index");
 
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2, $sign) = split(/\//, $reply{DATA});
+		return (hex($replyCode), $sign);
+	} else {
+		return (-1);
+	}
 }
 
 sub ReadClosure {
@@ -134,8 +191,12 @@ sub ReadClosure {
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "R/$index");
-
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2, $total, $daily, $date, $time, $z) = split(/\//, $reply{DATA});
+		return (hex($replyCode), $z);
+	} else {
+		return (-1);
+	}
 }
 
 sub ReadSummary {
@@ -153,7 +214,12 @@ sub IssueReport {
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "x/2/0");
 
-	return %reply; 
+	if (%reply) {
+		my($replyCode, $status1, $status2, $z) = split(/\//, $reply{DATA});
+		return (hex($replyCode), $z);
+	} else {
+		return (-1);
+	}
 }
 
 sub errMessage {
@@ -252,6 +318,7 @@ sub devStatus {
 
 sub appStatus {
 	my($self)   = shift @_;
+
 	my($status) = sprintf("%08b", shift);
 	my(@status) = split(//, $status);
 
@@ -259,6 +326,15 @@ sub appStatus {
 		($status[6],$status[5],$status[4],$status[2],$status[1],$status[0]);
 
 	return ($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull);
+}
+
+sub date6ToHost {
+	my($self) = shift @_;
+	my($var) = shift @_;
+
+	$var =~ s/(\d\d)(\d\d)(\d\d)/$3$2$1/;
+
+	return $var;
 }
 
 # Preloaded methods go here.
