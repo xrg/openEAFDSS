@@ -9,11 +9,11 @@ my($FD) = new EAFDSS::SDNP(
 		DIR   => "/tmp/SIGNS",
 		SN    => "ABC02000001",
 		IP    => "miles",
-		DEBUG => 3
+		DEBUG => 2
 	);
 
 #my($totalSigns, $dailySigns, $date, $time, $sign) = $FD->Sign("invoice.txt");
-my($sign) = $FD->FullSign("invoice.txt");
+my($reply, $sign) = $FD->Sign("invoice.txt");
 printf("    SIGN --> [%s]\n", $sign);
 exit;
 

@@ -25,20 +25,20 @@ sub new {
 	my($class) = shift @_;
 	my($self) = $class->SUPER::new(@_);
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::SDNP]::[new]");
+	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::SDNP]::[new]");
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "    Socket Initialization to IP [%s]", $self->{IP});
+	$self->_Debug($self->{LEVEL}{INFO}, "    Socket Initialization to IP [%s]", $self->{IP});
 	$self->{_SOCKET} = new IO::Socket::INET->new(PeerPort=>24222, Proto=>'udp', PeerAddr=> $self->{IP});
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "    Setting synced to FALSE");
+	$self->_Debug($self->{LEVEL}{INFO}, "    Setting synced to FALSE");
 	$self->{_SYNCED} = 0;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "    Setting timers");
+	$self->_Debug($self->{LEVEL}{INFO}, "    Setting timers");
 	$self->{_TSYNC} = 0;
 	$self->{_T0}    = 0;
 	$self->{_T1}    = 0;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "    Setting frame counter to 1");
+	$self->_Debug($self->{LEVEL}{INFO}, "    Setting frame counter to 1");
 	$self->{_FSN}    = 1;
 
 	return $self;
@@ -65,7 +65,7 @@ sub _initVars {
 sub Status {
 	my($self)  = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::SDNP]::[Status]");
+	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::SDNP]::[Status]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "v");
 
 	return $reply{DATA};
@@ -85,7 +85,7 @@ sub sdnpSync {
 	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= -.100};
 	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
-		$self->_Debug($self->{LEVEL}{DEBUG}, "    Send Sync Request try #%d", $try);
+		$self->_Debug($self->{LEVEL}{INFO}, "    Send Sync Request try #%d", $try);
 
 		# Set timer T0 to 500 milliseconds;
 		$self->{_T0} = 1;
@@ -95,7 +95,7 @@ sub sdnpSync {
 
 		# Send SYNC(IFSN) frame to connection IP address;
 		my($msg) = $self->sdnpPacket(0x11, 0x00);
-		$self->sdnpPrintFrame("    ----> [%s]", $msg);
+		$self->sdnpPrintFrame("      ----> [%s]", $msg);
 		$self->{_SOCKET}->send($msg);
 
 		# Do until T0 expires:
@@ -106,7 +106,7 @@ sub sdnpSync {
 			$self->{_SOCKET}->recv($frame, 512);
 			if ($frame) {
 				%reply = $self->analyzeFrame($frame);
-				$self->sdnpPrintFrame("    <---- [%s]", $frame);
+				$self->sdnpPrintFrame("      <---- [%s]", $frame);
 				$reply{'HOST'} = $self->{_SOCKET}->peerhost();
 			} else {
 				$reply{HOST} = -1;
@@ -133,7 +133,7 @@ sub sdnpSync {
 						return 1;
 					} 
 				} else {
-					$self->_Debug($self->{LEVEL}{DEBUG}, "   SYNC NOT ACKed!");
+					$self->_Debug($self->{LEVEL}{INFO}, "   SYNC NOT ACKed!");
 				}
 			}
 		}
@@ -159,12 +159,12 @@ sub SendRequest {
 	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
 		my(%reply)  = ();
-		$self->_Debug($self->{LEVEL}{DEBUG}, "    Send Request try #%d", $try);
+		$self->_Debug($self->{LEVEL}{INFO}, "    Send Request try #%d", $try);
 		SYNC:
 		# If state is UNSYNCHRONIZED or connection SYNC timer expired then:
 		if (1) {
 			if ( $self->sdnpSync() == 0) {
-				$self->_Debug($self->{LEVEL}{DEBUG}, "        Sync Failed");
+				$self->_Debug($self->{LEVEL}{INFO}, "        Sync Failed");
 				setitimer(ITIMER_REAL, 0, 0);
 				return %reply;
 			}
@@ -173,7 +173,7 @@ sub SendRequest {
 		SEND:
 		# Send REQUEST(Connection's NextFSN) using 'RequestDataPacket';
 		my($msg) = $self->sdnpPacket($opcode, $opdata, $data);
-		$self->sdnpPrintFrame("    ----> [%s]", $msg);
+		$self->sdnpPrintFrame("      ----> [%s]", $msg);
 		$self->{_SOCKET}->send($msg);
 
 		# Set T0 timer to 800 milliseconds;
@@ -186,7 +186,7 @@ sub SendRequest {
 			$self->{_SOCKET}->recv($frame, 512);
 			if ($frame) {
 				%reply = $self->analyzeFrame($frame);
-				$self->sdnpPrintFrame("    <---- [%s]", $frame);
+				$self->sdnpPrintFrame("      <---- [%s]", $frame);
 				$reply{'HOST'} = $self->{_SOCKET}->peerhost();
 			} else {
 				$reply{HOST} = -1;
@@ -196,7 +196,7 @@ sub SendRequest {
 			if ($self->sdnpFrameCheck(\%reply)) {
 				# If received frame's FSN <> Request frame's FSN
 				if ($self->{_FSN} != $reply{SN}) {
-					$self->_Debug($self->{LEVEL}{DEBUG}, "        Bad FSN, Discarding");
+					$self->_Debug($self->{LEVEL}{INFO}, "        Bad FSN, Discarding");
 					next;
 				} else {
 					# Test received frame's opcode;
@@ -221,7 +221,7 @@ sub SendRequest {
 						if ($checksum != $reply{CHECKSUM}) {
 							# Create and send NAK frame with FSN set to received FSN;
 							my($msg) = $self->sdnpPacket(0x13, 0x00);
-							$self->sdnpPrintFrame("    ----> [%s]", $msg);
+							$self->sdnpPrintFrame("      ----> [%s]", $msg);
 							$self->{_SOCKET}->send($msg);
 							next;
 						} else {
@@ -236,11 +236,11 @@ sub SendRequest {
 							return %reply;
 						}
 					}
-					$self->_Debug($self->{LEVEL}{DEBUG}, "        Bad Frame, Discarding");
+					$self->_Debug($self->{LEVEL}{INFO}, "        Bad Frame, Discarding");
 					next;
 				}
 			} else {
-				$self->_Debug($self->{LEVEL}{DEBUG}, "        Bad Frame, Discarding");
+				$self->_Debug($self->{LEVEL}{INFO}, "        Bad Frame, Discarding");
 			}
 		}
 	}
@@ -342,7 +342,7 @@ sub sdnpPrintFrame {
 		$tmpString .= sprintf("%02X::", ord substr($msg, $i, 1));
 	}
 	$tmpString .= sprintf("%02X", ord substr($msg, length($msg) - 1, 1));
-	$self->_Debug($self->{LEVEL}{DEBUG}, $format, $tmpString);
+	$self->_Debug($self->{LEVEL}{INFO}, $format, $tmpString);
 
 	my(%frame) = $self->analyzeFrame($msg);
 	$self->_Debug($self->{LEVEL}{DEBUG}, "\t    ID..................[%04X]", $frame{ID});

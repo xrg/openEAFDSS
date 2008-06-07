@@ -67,35 +67,49 @@ sub _initVars {
 sub Sign {
 	my($self)  = shift @_;
 	my($fname) = shift @_;
+	my($reply, $totalSigns, $dailySigns, $date, $time, $sign, $fullSign);
+
+	# Create The signs Dir
+	if (! -d  $self->{DIR} ) {
+		$self->_Debug($self->{LEVEL}{INFO}, "  Creating Base Dir [%s]", $self->{DIR});
+		mkdir($self->{DIR});
+	}
+	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
+	if (! -d $deviceDir ) {
+		$self->_Debug($self->{LEVEL}{INFO}, "  Creating Device Dir [%s]", $deviceDir);
+		mkdir($deviceDir);
+	}
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Sign]");
 	if (-e $fname) {
 		$self->_Debug($self->{LEVEL}{DEBUG}, "  Signing file [%s]", $fname);
 		open(FH, $fname);
-		return $self->GetSign(*FH);
+		($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign(*FH);
+		$fullSign = sprintf("%s %04d %08d %s%s %s",
+			$sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
 	} else {
 		$self->_Debug($self->{LEVEL}{DEBUG}, "  No such file [%s]", $fname);
 		return -1;
 	}
 
-	# Create A, B, C Files
-}
+	#Create A file
+	my($fnA) = sprintf("%s/%s%s%04d_a.txt", $deviceDir, $self->{SN}, $self->date6ToHost($date), $dailySigns);
+	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File A [%s]", $fnA);
+	open(FA, ">", $fnA) || die "Error: $!";
+	seek(FH, 0, 0);
+	while (<FH>) {
+		print(FA $_);
+	};
+	close(FA);
+	close(FH);
 
-sub FullSign {
-	my($self)  = shift @_;
-	my($fname) = shift @_;
+	my($fnB) = sprintf("%s/%s%s%04d_b.txt", $deviceDir, $self->{SN}, $self->date6ToHost($date), $dailySigns);
+	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File B [%s]", $fnB);
+	open(FB, ">", $fnB) || die "Error: $!";
+	print(FB $fullSign); 
+	close(FB);
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Sign]");
-	if (-e $fname) {
-		$self->_Debug($self->{LEVEL}{DEBUG}, "  Signing file [%s]", $fname);
-		open(FH, $fname);
-		return $self->GetFullSign(*FH);
-	} else {
-		$self->_Debug($self->{LEVEL}{DEBUG}, "  No such file [%s]", $fname);
-		return -1;
-	}
-
-	# Create A, B, C Files
+	return($reply, $fullSign);
 }
 
 sub DESTROY {

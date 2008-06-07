@@ -98,7 +98,7 @@ sub exitDialog {
 sub signFileDialog {
 	my($file) = $cui->filebrowser();
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply, $sign) = $FD->FullSign($file);
+	my($reply, $sign) = $FD->Sign($file);
 	if ($reply == 0) {
 		$cui->dialog(
 			-title => "Signature",
