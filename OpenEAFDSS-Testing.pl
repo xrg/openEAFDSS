@@ -13,8 +13,10 @@ my($FD) = new EAFDSS::SDNP(
 	);
 
 #my($totalSigns, $dailySigns, $date, $time, $sign) = $FD->Sign("invoice.txt");
-my($reply, $sign) = $FD->Sign("invoice.txt");
+my($reply1, $sign) = $FD->Sign("invoice.txt");
 printf("    SIGN --> [%s]\n", $sign);
+my($reply2, $z) = $FD->Report();
+printf("       Z --> [%s]\n", $z);
 exit;
 
 #$data = "";

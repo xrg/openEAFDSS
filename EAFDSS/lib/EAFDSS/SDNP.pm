@@ -162,7 +162,7 @@ sub SendRequest {
 		$self->_Debug($self->{LEVEL}{INFO}, "    Send Request try #%d", $try);
 		SYNC:
 		# If state is UNSYNCHRONIZED or connection SYNC timer expired then:
-		if (1) {
+		if ($self->{_TSYNC} == 0) {
 			if ( $self->sdnpSync() == 0) {
 				$self->_Debug($self->{LEVEL}{INFO}, "        Sync Failed");
 				setitimer(ITIMER_REAL, 0, 0);

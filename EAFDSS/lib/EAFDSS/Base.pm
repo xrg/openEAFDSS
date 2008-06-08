@@ -69,32 +69,55 @@ sub Sign {
 	my($fname) = shift @_;
 	my($reply, $totalSigns, $dailySigns, $date, $time, $sign, $fullSign);
 
-	# Create The signs Dir
-	if (! -d  $self->{DIR} ) {
-		$self->_Debug($self->{LEVEL}{INFO}, "  Creating Base Dir [%s]", $self->{DIR});
-		mkdir($self->{DIR});
-	}
-	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
-	if (! -d $deviceDir ) {
-		$self->_Debug($self->{LEVEL}{INFO}, "  Creating Device Dir [%s]", $deviceDir);
-		mkdir($deviceDir);
-	}
-
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Sign]");
+	my($deviceDir) = $self->_createSignDir();
+
 	if (-e $fname) {
 		$self->_Debug($self->{LEVEL}{DEBUG}, "  Signing file [%s]", $fname);
 		open(FH, $fname);
 		($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign(*FH);
 		$fullSign = sprintf("%s %04d %08d %s%s %s",
 			$sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+		close(FH);
+
+		$self->_createFileA($fname, $deviceDir, $date, $dailySigns);
+		$self->_createFileB($fullSign, $deviceDir, $date, $dailySigns);
 	} else {
 		$self->_Debug($self->{LEVEL}{DEBUG}, "  No such file [%s]", $fname);
 		return -1;
 	}
 
-	#Create A file
-	my($fnA) = sprintf("%s/%s%s%04d_a.txt", $deviceDir, $self->{SN}, $self->date6ToHost($date), $dailySigns);
+	return($reply, $fullSign);
+}
+
+sub _createSignDir {
+	my($self) = shift @_;
+
+	# Create The signs Dir
+	if (! -d  $self->{DIR} ) {
+		$self->_Debug($self->{LEVEL}{INFO}, "  Creating Base Dir [%s]", $self->{DIR});
+		mkdir($self->{DIR});
+	}
+
+	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
+	if (! -d $deviceDir ) {
+		$self->_Debug($self->{LEVEL}{INFO}, "  Creating Device Dir [%s]", $deviceDir);
+		mkdir($deviceDir);
+	}
+
+	return $deviceDir;
+}
+
+sub _createFileA {
+	my($self) = shift @_;
+	my($fn)   = shift @_;
+	my($dir)  = shift @_;
+	my($date) = shift @_;
+	my($ds)   = shift @_;
+
+	my($fnA) = sprintf("%s/%s%s%04d_a.txt", $dir, $self->{SN}, $self->date6ToHost($date), $ds);
 	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File A [%s]", $fnA);
+	open(FH, $fn);
 	open(FA, ">", $fnA) || die "Error: $!";
 	seek(FH, 0, 0);
 	while (<FH>) {
@@ -102,14 +125,51 @@ sub Sign {
 	};
 	close(FA);
 	close(FH);
+}
 
-	my($fnB) = sprintf("%s/%s%s%04d_b.txt", $deviceDir, $self->{SN}, $self->date6ToHost($date), $dailySigns);
+sub _createFileB {
+	my($self) = shift @_;
+	my($fullSign)   = shift @_;
+	my($dir)  = shift @_;
+	my($date) = shift @_;
+	my($ds)   = shift @_;
+
+	my($fnB) = sprintf("%s/%s%s%04d_b.txt", $dir, $self->{SN}, $self->date6ToHost($date), $ds);
 	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File B [%s]", $fnB);
 	open(FB, ">", $fnB) || die "Error: $!";
 	print(FB $fullSign); 
 	close(FB);
+}
 
-	return($reply, $fullSign);
+sub Report {
+	my($self) = shift @_;
+	my($type) = shift @_;
+	my($z); 
+
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Report]");
+	my($deviceDir) = $self->_createSignDir();
+
+	my($reply1) = $self->IssueReport();
+	my($reply2, $date, $time, $daily, $z) = $self->ReadClosure(0);
+	$self->_createFileC($z, $deviceDir, $date, $time, $daily);
+
+	return($reply2, $z);
+}
+
+sub _createFileC {
+	my($self) = shift @_;
+	my($z)    = shift @_;
+	my($dir)  = shift @_;
+	my($date) = shift @_;
+	my($time) = shift @_;
+	my($daily) = shift @_;
+
+	my($fnC) = sprintf("%s/%s%s%s%04d_c.txt",
+		$dir, $self->{SN}, $self->date6ToHost($date), $self->time6toHost($time), $daily);
+	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File C [%s]", $fnC);
+	open(FC, ">", $fnC) || die "Error: $!";
+	print(FC $z); 
+	close(FC);
 }
 
 sub DESTROY {

@@ -188,21 +188,25 @@ sub ReadSignEntry {
 sub ReadClosure {
 	my($self)  = shift @_;
 	my($index) = shift @_;
+	my(%reply, $replyCode, $status1, $status2, $total, $daily, $date, $time, $z);
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "R/$index");
-	if (%reply) {
-		my($replyCode, $status1, $status2, $total, $daily, $date, $time, $z) = split(/\//, $reply{DATA});
-		return (hex($replyCode), $z);
-	} else {
-		return (-1);
-	}
+	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::Micrelec]::[ReadClosure]");
+	do {
+		%reply = $self->SendRequest(0x21, 0x00, "R/$index");
+		if (%reply) {
+			($replyCode, $status1, $status2, $total, $daily, $date, $time, $z) = split(/\//, $reply{DATA});
+		} else {
+			return (-1);
+		}
+	} until ($replyCode !~ /^0E$/);
+
+	return (hex($replyCode), $date, $time, $daily, $z);
 }
 
 sub ReadSummary {
 	my($self)  = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::Micrelec]::[ReadSummary]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
 
 	return %reply; 
@@ -210,13 +214,14 @@ sub ReadSummary {
 
 sub IssueReport {
 	my($self)  = shift @_;
+	my(%reply, $replyCode, $status1, $status2);
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "x/2/0");
+	%reply = $self->SendRequest(0x21, 0x00, "x/2/0");
 
 	if (%reply) {
-		my($replyCode, $status1, $status2, $z) = split(/\//, $reply{DATA});
-		return (hex($replyCode), $z);
+		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
+		return (hex($replyCode));
 	} else {
 		return (-1);
 	}
@@ -333,6 +338,15 @@ sub date6ToHost {
 	my($var) = shift @_;
 
 	$var =~ s/(\d\d)(\d\d)(\d\d)/$3$2$1/;
+
+	return $var;
+}
+
+sub time6toHost {
+	my($self) = shift @_;
+	my($var) = shift @_;
+
+	$var =~ s/(\d\d)(\d\d)(\d\d)/$1$2/;
 
 	return $var;
 }
