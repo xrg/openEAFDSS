@@ -116,12 +116,12 @@ sub signFileDialog {
 
 sub issueReportDialog {
 	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply) = $FD->IssueReport();
+
+	my($reply, $z) = $FD->Report();
 	if ($reply == 0) {
-		my($reply, $z) = $FD->ReadClosure(0);
 		$cui->dialog(
-			-title => "Get Headers",
-			-message => sprintf("%s", $z)
+			-title => "Z Report",
+			-message => $z
 		);
 	} else {
 		my($curError, $curFixProposal) = $FD->errMessage($reply);

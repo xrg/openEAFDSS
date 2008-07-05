@@ -144,16 +144,84 @@ sub _createFileB {
 sub Report {
 	my($self) = shift @_;
 	my($type) = shift @_;
-	my($z); 
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Report]");
 	my($deviceDir) = $self->_createSignDir();
+
+	$self->_Recover();
 
 	my($reply1) = $self->IssueReport();
 	my($reply2, $date, $time, $daily, $z) = $self->ReadClosure(0);
 	$self->_createFileC($z, $deviceDir, $date, $time, $daily);
 
 	return($reply2, $z);
+}
+
+sub _Recover {
+	my($self) = shift @_;
+	my($reply, $status1, $status2, $total, $daily, $date, $time, $z);
+
+	($reply, $status1, $status2) = $self->GetStatus();
+	if ($reply != 0) { return $reply};
+
+	my($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery) = $self->devStatus($status1);
+	if ($cmos != 1) { return };
+
+	my($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull) = $self->appStatus($status1);
+
+	$self->_Debug($self->{LEVEL}{INFO}, "   CMOS is set, going for recovery!");
+
+	($reply, $date, $time, $daily, $z) = $self->ReadClosure(0);
+	if ($reply != 0) {
+		$self->_Debug($self->{LEVEL}{INFO}, "   Aborting recovery because of ReadClosure reply[%d]", $reply);
+		return $reply
+	};
+
+	my($curDailySign) = 1;
+	if ($recovery == 1) {
+		my($curDailySign) = $daily;
+	}
+
+	$self->_Debug($self->{LEVEL}{INFO}, "    Starting from Closure #%03d", $curDailySign);
+	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
+
+	opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+	my(@cfiles) = grep { /.*_[abc]\.txt/ } readdir(DIR);
+	closedir(DIR);
+
+	my($matches);
+	do {
+		$self->_Debug($self->{LEVEL}{INFO}, "      Closure #%03d", $curDailySign);
+		#my($curRegex) = sprintf("%s%s\\d{6}%04d_a.txt", $self->{SN}, $self->date6ToHost($date), $curDailySign);
+		my($curRegex) = sprintf("%s%s%04d_a.txt", $self->{SN}, $self->date6ToHost($date), $curDailySign);
+		$self->_Debug($self->{LEVEL}{INFO}, "       Checking for regex [%s]", $curRegex);
+		my($curFile);
+		$matches = 0;
+		foreach $curFile (@cfiles) {
+			$self->_Debug($self->{LEVEL}{INFO}, "          Checking [%s]", $curFile);
+			if ( $curFile =~ /$curRegex/ ) {
+				$self->_Debug($self->{LEVEL}{INFO}, "          Matched regex [%s]", $curFile);
+				$matches++;
+
+				$self->_Debug($self->{LEVEL}{INFO}, "          Resigning [%s]", $curFile);
+				open(FH, $deviceDir . "/" . $curFile);
+				my($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign(*FH);
+				my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+				close(FH);
+
+				$curFile =~ s/_a/_b/;
+				$self->_Debug($self->{LEVEL}{INFO}, "          Updating B file[%s]", $curFile);
+				open(FB, ">>",  $deviceDir . "/" .$curFile) || die "Error: $!";
+				print(FB "\n" . $fullSign); 
+				close(FB);
+				last;
+			}
+		}
+		$curDailySign++;
+	} while ($matches != 0);
+
+	$self->_Debug($self->{LEVEL}{INFO}, "    Recovering... $self->{DIR}/$self->{SN}");
+	exit;
 }
 
 sub _createFileC {

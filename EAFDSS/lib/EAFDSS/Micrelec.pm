@@ -43,15 +43,22 @@ sub GetSign {
 	my($self) = shift @_;
 	my($fh)   = shift @_;
 
-	my($chunk);
+	my($chunk, %reply);
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[Sign]");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "{/0");
+	do {
+		%reply = $self->SendRequest(0x21, 0x00, "{/0");
+		if ($reply{DATA} =~ /^0E/) {
+			sleep 1;
+		}
+	} until ($reply{DATA} !~ /^0E/);
+
 	if ( %reply && ($reply{OPCODE} == 0x22) ) {
 		while (read($fh, $chunk, 400)) {
 			my(%reply) = $self->SendRequest(0x21, 0x00, "@/$chunk");
 		}
 		%reply = $self->SendRequest(0x21, 0x00, "}");
 	}
+
 	if (%reply) { 
 		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
 		return ($replyCode, $totalSigns, $dailySigns, $date, $time, $sign);
@@ -197,6 +204,9 @@ sub ReadClosure {
 			($replyCode, $status1, $status2, $total, $daily, $date, $time, $z) = split(/\//, $reply{DATA});
 		} else {
 			return (-1);
+		}
+		if ($replyCode =~ /^0E$/) {
+			sleep 1;
 		}
 	} until ($replyCode !~ /^0E$/);
 

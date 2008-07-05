@@ -6,15 +6,15 @@ use Digest::SHA1  qw(sha1_hex);
 use Data::Dumper;
 
 my($FD) = new EAFDSS::SDNP(
-		DIR   => "/tmp/SIGNS",
+		DIR   => "/tmp/signs",
 		SN    => "ABC02000001",
 		IP    => "miles",
 		DEBUG => 2
 	);
 
 #my($totalSigns, $dailySigns, $date, $time, $sign) = $FD->Sign("invoice.txt");
-my($reply1, $sign) = $FD->Sign("invoice.txt");
-printf("    SIGN --> [%s]\n", $sign);
+#my($reply1, $sign) = $FD->Sign("invoice.txt");
+#printf("    SIGN --> [%s]\n", $sign);
 my($reply2, $z) = $FD->Report();
 printf("       Z --> [%s]\n", $z);
 exit;
