@@ -8,7 +8,7 @@ use Data::Dumper;
 my($FD) = new EAFDSS::SDNP(
 		DIR   => "/tmp/signs",
 		SN    => "ABC02000001",
-		IP    => "miles",
+		IP    => "gattaca-wlan",
 		DEBUG => 2
 	);
 

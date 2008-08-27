@@ -67,7 +67,7 @@ sub _initVars {
 sub Sign {
 	my($self)  = shift @_;
 	my($fname) = shift @_;
-	my($reply, $totalSigns, $dailySigns, $date, $time, $sign, $fullSign);
+	my($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign, $fullSign);
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Sign]");
 	my($deviceDir) = $self->_createSignDir();
@@ -75,13 +75,13 @@ sub Sign {
 	if (-e $fname) {
 		$self->_Debug($self->{LEVEL}{DEBUG}, "  Signing file [%s]", $fname);
 		open(FH, $fname);
-		($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign(*FH);
+		($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->GetSign(*FH);
 		$fullSign = sprintf("%s %04d %08d %s%s %s",
 			$sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
 		close(FH);
 
-		$self->_createFileA($fname, $deviceDir, $date, $dailySigns);
-		$self->_createFileB($fullSign, $deviceDir, $date, $dailySigns);
+		$self->_createFileA($fname, $deviceDir, $date, $dailySigns, $nextZ);
+		$self->_createFileB($fullSign, $deviceDir, $date, $dailySigns, $nextZ);
 	} else {
 		$self->_Debug($self->{LEVEL}{DEBUG}, "  No such file [%s]", $fname);
 		return -1;
@@ -114,8 +114,9 @@ sub _createFileA {
 	my($dir)  = shift @_;
 	my($date) = shift @_;
 	my($ds)   = shift @_;
+	my($curZ) = shift @_;
 
-	my($fnA) = sprintf("%s/%s%s%04d_a.txt", $dir, $self->{SN}, $self->date6ToHost($date), $ds);
+	my($fnA) = sprintf("%s/%s%s%04d%04d_a.txt", $dir, $self->{SN}, $self->date6ToHost($date), $curZ, $ds);
 	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File A [%s]", $fnA);
 	open(FH, $fn);
 	open(FA, ">", $fnA) || die "Error: $!";
@@ -133,8 +134,9 @@ sub _createFileB {
 	my($dir)  = shift @_;
 	my($date) = shift @_;
 	my($ds)   = shift @_;
+	my($curZ) = shift @_;
 
-	my($fnB) = sprintf("%s/%s%s%04d_b.txt", $dir, $self->{SN}, $self->date6ToHost($date), $ds);
+	my($fnB) = sprintf("%s/%s%s%04d%04d_b.txt", $dir, $self->{SN}, $self->date6ToHost($date), $curZ, $ds);
 	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File B [%s]", $fnB);
 	open(FB, ">", $fnB) || die "Error: $!";
 	print(FB $fullSign); 
@@ -148,7 +150,8 @@ sub Report {
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[Report]");
 	my($deviceDir) = $self->_createSignDir();
 
-	$self->_Recover();
+	$self->ValidateFilesB();
+	$self->ValidateFilesC();
 
 	my($reply1) = $self->IssueReport();
 	my($reply2, $date, $time, $daily, $z) = $self->ReadClosure(0);
@@ -221,7 +224,12 @@ sub _Recover {
 	} while ($matches != 0);
 
 	$self->_Debug($self->{LEVEL}{INFO}, "    Recovering... $self->{DIR}/$self->{SN}");
-	exit;
+
+	my($reply1) = $self->IssueReport();
+	($reply, $date, $time, $daily, $z) = $self->ReadClosure(0);
+	$self->_createFileC($z, $deviceDir, $date, $time, $daily);
+
+	return($reply, $z);
 }
 
 sub _createFileC {
@@ -238,6 +246,50 @@ sub _createFileC {
 	open(FC, ">", $fnC) || die "Error: $!";
 	print(FC $z); 
 	close(FC);
+}
+
+sub ValidateFilesB {
+	my($self) = shift @_;
+
+	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily) = $self->ReadSummary();
+	if ($reply != 0) { return $reply};
+
+	my($curZ) = $lastZ + 1;
+	$self->_Debug($self->{LEVEL}{INFO}, "    Validating B Files for #%d Z", $curZ);
+	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
+
+	exit;
+
+	opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+	my(@afiles) = grep { /.*${curZ}_[a]\.txt/ } readdir(DIR);
+	closedir(DIR);
+
+	#foreach my $curA (@afiles) {
+	#	$self->_Debug($self->{LEVEL}{INFO}, "          Checking [%s]", $curA);
+	#	if ( $curA =~ /$curRegex/ ) {
+	#		$self->_Debug($self->{LEVEL}{INFO}, "          Matched regex [%s]", $curA);
+	#		$matches++;
+
+	#		$self->_Debug($self->{LEVEL}{INFO}, "          Resigning [%s]", $curA);
+	#		open(FH, $deviceDir . "/" . $curA);
+	#		my($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign(*FH);
+	#		my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+	#		close(FH);
+
+	#		$curA =~ s/_a/_b/;
+	#		$self->_Debug($self->{LEVEL}{INFO}, "          Updating B file[%s]", $curA);
+	#		open(FB, ">>",  $deviceDir . "/" .$curA) || die "Error: $!";
+	#		print(FB "\n" . $fullSign); 
+	#		close(FB);
+	#		last;
+	#	}
+	#}
+
+	return;
+}
+
+sub ValidateFilesC {
+	my($self) = shift @_;
 }
 
 sub DESTROY {

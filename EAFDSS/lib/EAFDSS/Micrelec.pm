@@ -61,7 +61,7 @@ sub GetSign {
 
 	if (%reply) { 
 		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
-		return ($replyCode, $totalSigns, $dailySigns, $date, $time, $sign);
+		return ($replyCode, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign);
 	} else {
 		return (-1);
 	}
@@ -215,11 +215,22 @@ sub ReadClosure {
 
 sub ReadSummary {
 	my($self)  = shift @_;
+	my(%reply, $replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily);
 
 	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::Micrelec]::[ReadSummary]");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
+	do {
+		my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
+		if (%reply) {
+			($replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily) = split(/\//, $reply{DATA});
+		} else {
+			return (-1);
+		}
+		if ($replyCode =~ /^0E$/) {
+			sleep 1;
+		}
+	} until ($replyCode !~ /^0E$/);
 
-	return %reply; 
+	return (hex($replyCode), $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily);
 }
 
 sub IssueReport {
