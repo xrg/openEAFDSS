@@ -195,13 +195,13 @@ sub ReadSignEntry {
 sub ReadClosure {
 	my($self)  = shift @_;
 	my($index) = shift @_;
-	my(%reply, $replyCode, $status1, $status2, $total, $daily, $date, $time, $z);
+	my(%reply, $replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
 
 	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::Micrelec]::[ReadClosure]");
 	do {
 		%reply = $self->SendRequest(0x21, 0x00, "R/$index");
 		if (%reply) {
-			($replyCode, $status1, $status2, $total, $daily, $date, $time, $z) = split(/\//, $reply{DATA});
+			($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = split(/\//, $reply{DATA});
 		} else {
 			return (-1);
 		}
@@ -210,7 +210,7 @@ sub ReadClosure {
 		}
 	} until ($replyCode !~ /^0E$/);
 
-	return (hex($replyCode), $date, $time, $daily, $z);
+	return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
 }
 
 sub ReadSummary {

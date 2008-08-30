@@ -154,15 +154,15 @@ sub Report {
 	$self->ValidateFilesC();
 
 	my($reply1) = $self->IssueReport();
-	my($reply2, $date, $time, $daily, $z) = $self->ReadClosure(0);
-	$self->_createFileC($z, $deviceDir, $date, $time, $daily);
+	my($reply2, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->ReadClosure(0);
+	$self->_createFileC($z, $deviceDir, $date, $time, $closure);
 
 	return($reply2, $z);
 }
 
 sub _Recover {
 	my($self) = shift @_;
-	my($reply, $status1, $status2, $total, $daily, $date, $time, $z);
+	my($reply, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
 
 	($reply, $status1, $status2) = $self->GetStatus();
 	if ($reply != 0) { return $reply};
@@ -174,7 +174,7 @@ sub _Recover {
 
 	$self->_Debug($self->{LEVEL}{INFO}, "   CMOS is set, going for recovery!");
 
-	($reply, $date, $time, $daily, $z) = $self->ReadClosure(0);
+	($reply, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->ReadClosure(0);
 	if ($reply != 0) {
 		$self->_Debug($self->{LEVEL}{INFO}, "   Aborting recovery because of ReadClosure reply[%d]", $reply);
 		return $reply
@@ -182,7 +182,7 @@ sub _Recover {
 
 	my($curDailySign) = 1;
 	if ($recovery == 1) {
-		my($curDailySign) = $daily;
+		my($curDailySign) = $dailySigns;
 	}
 
 	$self->_Debug($self->{LEVEL}{INFO}, "    Starting from Closure #%03d", $curDailySign);
@@ -226,8 +226,8 @@ sub _Recover {
 	$self->_Debug($self->{LEVEL}{INFO}, "    Recovering... $self->{DIR}/$self->{SN}");
 
 	my($reply1) = $self->IssueReport();
-	($reply, $date, $time, $daily, $z) = $self->ReadClosure(0);
-	$self->_createFileC($z, $deviceDir, $date, $time, $daily);
+	($reply, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->ReadClosure(0);
+	$self->_createFileC($z, $deviceDir, $date, $time, $closure);
 
 	return($reply, $z);
 }
@@ -238,11 +238,11 @@ sub _createFileC {
 	my($dir)  = shift @_;
 	my($date) = shift @_;
 	my($time) = shift @_;
-	my($daily) = shift @_;
+	my($closure) = shift @_;
 
-	my($fnC) = sprintf("%s/%s%s%s%04d_c.txt",
-		$dir, $self->{SN}, $self->date6ToHost($date), $self->time6toHost($time), $daily);
+	my($fnC) = sprintf("%s/%s%s%s%04d_c.txt", $dir, $self->{SN}, $self->date6ToHost($date), $self->time6toHost($time), $closure);
 	$self->_Debug($self->{LEVEL}{INFO}, "   Creating File C [%s]", $fnC);
+
 	open(FC, ">", $fnC) || die "Error: $!";
 	print(FC $z); 
 	close(FC);
@@ -251,7 +251,7 @@ sub _createFileC {
 sub ValidateFilesB {
 	my($self) = shift @_;
 
-	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily) = $self->ReadSummary();
+	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->ReadSummary();
 	if ($reply != 0) { return $reply};
 
 	my($regexA) = sprintf("%s\\d{6}%04d\\d{4}_a.txt", $self->{SN}, $lastZ + 1);
@@ -269,7 +269,7 @@ sub ValidateFilesB {
 		my($curFileB) = $curFileA;
 		$curFileB =~ s/_a/_b/;
 
-		if (! -e $curFileB) {
+		if (! -e $curFileB) { # TODO: Add size Check
 			my($curB)  = $curA; $curB =~ s/_a/_b/;
 			my($curIndex) = substr($curA, 21, 4); $curIndex =~ s/^0*//;
 			$self->_Debug($self->{LEVEL}{INFO}, "            Recreating file B [%s] -- Index [%d]", $curB, $curIndex);
@@ -288,6 +288,44 @@ sub ValidateFilesB {
 
 sub ValidateFilesC {
 	my($self) = shift @_;
+
+	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->ReadSummary();
+	if ($reply != 0) { return $reply };
+
+	my($curClosure, $curFileC, $matched);
+
+	my($regexC) = sprintf("%s.*_c.txt", $self->{SN}, $lastZ + 1);
+	$self->_Debug($self->{LEVEL}{INFO}, "    Validating C Files for, total of [%d]", $lastZ);
+	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
+
+	opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+	my(@cfiles) = grep { /$regexC/ } readdir(DIR);
+	closedir(DIR);
+
+	for ($curClosure = 1; $curClosure <= $lastZ;  $curClosure++) {
+		$self->_Debug($self->{LEVEL}{INFO}, "      Searching for [%d]", $curClosure);
+
+		$matched = 0;
+		foreach (@cfiles) {
+			if (/${curClosure}_c\.txt$/) { 
+				$curFileC = $_;
+				$matched = 1;
+				last;
+			}
+		}
+
+		if ($matched) { 
+			$self->_Debug($self->{LEVEL}{INFO}, "          Keeping file C    [%s] -- Index [%d]", $curFileC, $curClosure);
+		} else {
+			my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->ReadClosure($curClosure);
+			my($fnC) = sprintf("%s%s%s%04d_c.txt", $sn, $self->date6ToHost($date), $self->time6toHost($time), $curClosure);
+			$self->_Debug($self->{LEVEL}{INFO}, "          Recreating file C [%s] -- Index [%d]", $fnC, $curClosure);
+
+			open(FC, ">", $deviceDir . "/" . $fnC) || die "Error: $!";
+			print(FC $z); 
+			close(FC);
+		}
+	}
 }
 
 sub DESTROY {
