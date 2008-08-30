@@ -185,8 +185,8 @@ sub ReadSignEntry {
 	my(%reply) = $self->SendRequest(0x21, 0x00, "\$/$index");
 
 	if (%reply) {
-		my($replyCode, $status1, $status2, $sign) = split(/\//, $reply{DATA});
-		return (hex($replyCode), $sign);
+		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $closure) = split(/\//, $reply{DATA});
+		return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $closure);
 	} else {
 		return (-1);
 	}

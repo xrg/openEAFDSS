@@ -254,36 +254,34 @@ sub ValidateFilesB {
 	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily) = $self->ReadSummary();
 	if ($reply != 0) { return $reply};
 
-	my($curZ) = $lastZ + 1;
-	$self->_Debug($self->{LEVEL}{INFO}, "    Validating B Files for #%d Z", $curZ);
+	my($regexA) = sprintf("%s\\d{6}%04d\\d{4}_a.txt", $self->{SN}, $lastZ + 1);
+	$self->_Debug($self->{LEVEL}{INFO}, "    Validating B Files for #%d Z with regex [%s]", $lastZ + 1 , $regexA);
 	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
 
-	exit;
-
 	opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
-	my(@afiles) = grep { /.*${curZ}_[a]\.txt/ } readdir(DIR);
+	my(@afiles) = grep { /$regexA/ } readdir(DIR);
 	closedir(DIR);
 
-	#foreach my $curA (@afiles) {
-	#	$self->_Debug($self->{LEVEL}{INFO}, "          Checking [%s]", $curA);
-	#	if ( $curA =~ /$curRegex/ ) {
-	#		$self->_Debug($self->{LEVEL}{INFO}, "          Matched regex [%s]", $curA);
-	#		$matches++;
+	foreach my $curA (@afiles) {
+		$self->_Debug($self->{LEVEL}{INFO}, "          Checking [%s]", $curA);
+		my($curFileA) = sprintf("%s/%s", $deviceDir, $curA);
 
-	#		$self->_Debug($self->{LEVEL}{INFO}, "          Resigning [%s]", $curA);
-	#		open(FH, $deviceDir . "/" . $curA);
-	#		my($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign(*FH);
-	#		my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
-	#		close(FH);
+		my($curFileB) = $curFileA;
+		$curFileB =~ s/_a/_b/;
 
-	#		$curA =~ s/_a/_b/;
-	#		$self->_Debug($self->{LEVEL}{INFO}, "          Updating B file[%s]", $curA);
-	#		open(FB, ">>",  $deviceDir . "/" .$curA) || die "Error: $!";
-	#		print(FB "\n" . $fullSign); 
-	#		close(FB);
-	#		last;
-	#	}
-	#}
+		if (! -e $curFileB) {
+			my($curB)  = $curA; $curB =~ s/_a/_b/;
+			my($curIndex) = substr($curA, 21, 4); $curIndex =~ s/^0*//;
+			$self->_Debug($self->{LEVEL}{INFO}, "            Recreating file B [%s] -- Index [%d]", $curB, $curIndex);
+
+			my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $closure) = $self->ReadSignEntry($curIndex);
+			my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+
+			open(FB, ">",  $curFileB) || die "Error: $!";
+			print(FB $fullSign); 
+			close(FB);
+		}
+	}
 
 	return;
 }
