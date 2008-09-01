@@ -93,6 +93,8 @@ sub Sign {
 sub _createSignDir {
 	my($self) = shift @_;
 
+	$self->_Recover();
+
 	# Create The signs Dir
 	if (! -d  $self->{DIR} ) {
 		$self->_Debug($self->{LEVEL}{INFO}, "  Creating Base Dir [%s]", $self->{DIR});
@@ -162,7 +164,7 @@ sub Report {
 
 sub _Recover {
 	my($self) = shift @_;
-	my($reply, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
+	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 
 	($reply, $status1, $status2) = $self->GetStatus();
 	if ($reply != 0) { return $reply};
@@ -174,61 +176,43 @@ sub _Recover {
 
 	$self->_Debug($self->{LEVEL}{INFO}, "   CMOS is set, going for recovery!");
 
-	($reply, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->ReadClosure(0);
+	($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->ReadSummary(0);
 	if ($reply != 0) {
-		$self->_Debug($self->{LEVEL}{INFO}, "   Aborting recovery because of ReadClosure reply[%d]", $reply);
+		$self->_Debug($self->{LEVEL}{INFO}, "   Aborting recovery because of ReadClosure reply [%d]", $reply);
 		return $reply
 	};
 
-	my($curDailySign) = 1;
-	if ($recovery == 1) {
-		my($curDailySign) = $dailySigns;
-	}
-
-	$self->_Debug($self->{LEVEL}{INFO}, "    Starting from Closure #%03d", $curDailySign);
+	my($regexA) = sprintf("%s\\d{6}%04d\\d{4}_a.txt", $self->{SN}, $lastZ + 1);
 	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
 
 	opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
-	my(@cfiles) = grep { /.*_[abc]\.txt/ } readdir(DIR);
+	my(@afiles) = grep { /$regexA/ } readdir(DIR);
 	closedir(DIR);
 
-	my($matches);
-	do {
-		$self->_Debug($self->{LEVEL}{INFO}, "      Closure #%03d", $curDailySign);
-		#my($curRegex) = sprintf("%s%s\\d{6}%04d_a.txt", $self->{SN}, $self->date6ToHost($date), $curDailySign);
-		my($curRegex) = sprintf("%s%s%04d_a.txt", $self->{SN}, $self->date6ToHost($date), $curDailySign);
-		$self->_Debug($self->{LEVEL}{INFO}, "       Checking for regex [%s]", $curRegex);
-		my($curFile);
-		$matches = 0;
-		foreach $curFile (@cfiles) {
-			$self->_Debug($self->{LEVEL}{INFO}, "          Checking [%s]", $curFile);
-			if ( $curFile =~ /$curRegex/ ) {
-				$self->_Debug($self->{LEVEL}{INFO}, "          Matched regex [%s]", $curFile);
-				$matches++;
+	foreach my $curA (@afiles) {
+		$self->_Debug($self->{LEVEL}{INFO}, "          Checking [%s]", $curA);
+		my($curFileA) = sprintf("%s/%s", $deviceDir, $curA);
 
-				$self->_Debug($self->{LEVEL}{INFO}, "          Resigning [%s]", $curFile);
-				open(FH, $deviceDir . "/" . $curFile);
-				my($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign(*FH);
-				my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
-				close(FH);
+		my($curFileB) = $curFileA;
+		$curFileB =~ s/_a/_b/;
 
-				$curFile =~ s/_a/_b/;
-				$self->_Debug($self->{LEVEL}{INFO}, "          Updating B file[%s]", $curFile);
-				open(FB, ">>",  $deviceDir . "/" .$curFile) || die "Error: $!";
-				print(FB "\n" . $fullSign); 
-				close(FB);
-				last;
-			}
-		}
-		$curDailySign++;
-	} while ($matches != 0);
+		my($curB)  = $curA; $curB =~ s/_a/_b/;
+		my($curIndex) = substr($curA, 21, 4); $curIndex =~ s/^0*//;
+		$self->_Debug($self->{LEVEL}{INFO}, "            Updating file B  [%s] -- Index [%d]", $curB, $curIndex);
 
-	$self->_Debug($self->{LEVEL}{INFO}, "    Recovering... $self->{DIR}/$self->{SN}");
+		$self->_Debug($self->{LEVEL}{INFO}, "            Resigning file A [%s]", $curA);
+		open(FH, $curFileA);
 
-	my($reply1) = $self->IssueReport();
-	($reply, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->ReadClosure(0);
-	$self->_createFileC($z, $deviceDir, $date, $time, $closure);
+		my($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->GetSign(*FH);
+		my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+		close(FH);
 
+		open(FB, ">>", $curFileB) || die "Error: $!";
+		print(FB "\n" . $fullSign); 
+		close(FB);
+	}
+
+	my($reply, $z) = $self->Report();
 	return($reply, $z);
 }
 

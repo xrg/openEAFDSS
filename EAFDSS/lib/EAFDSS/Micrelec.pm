@@ -215,13 +215,13 @@ sub ReadClosure {
 
 sub ReadSummary {
 	my($self)  = shift @_;
-	my(%reply, $replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily);
+	my(%reply, $replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 
 	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::Micrelec]::[ReadSummary]");
 	do {
 		my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
 		if (%reply) {
-			($replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily) = split(/\//, $reply{DATA});
+			($replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = split(/\//, $reply{DATA});
 		} else {
 			return (-1);
 		}
@@ -230,7 +230,7 @@ sub ReadSummary {
 		}
 	} until ($replyCode !~ /^0E$/);
 
-	return (hex($replyCode), $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainiDaily);
+	return (hex($replyCode), $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 }
 
 sub IssueReport {
