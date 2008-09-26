@@ -212,8 +212,8 @@ sub _Recover {
 		close(FB);
 	}
 
-	my($reply, $z) = $self->Report();
-	return($reply, $z);
+	my($replyFinal, $z) = $self->Report();
+	return($replyFinal, $z);
 }
 
 sub _createFileC {
