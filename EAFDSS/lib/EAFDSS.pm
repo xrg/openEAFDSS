@@ -5,7 +5,7 @@
 #
 # ID: $Id: Base.pm 162 2008-05-08 18:44:54Z hasiotis $
 
-package EAFDSS::Base;
+package EAFDSS;
 
 use 5.006001;
 use strict;
@@ -20,10 +20,21 @@ sub new {
 	my($invocant) = shift @_;
 	my($self) = bless({}, ref $invocant || $invocant);
 
-	$self->_initVars(@_);
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Base]::[new]");
+	my($driver_params) = shift @_;
+	my($driver) = substr($driver_params, 0, rindex($driver_params, "::"));
+	my($params) = substr($driver_params, rindex($driver_params, "::") + 2);
+	
+	my($serial) = shift @_;
+	my($sDir)   = shift @_;
 
-	return $self;
+	eval qq { require $driver; };
+
+	$self->_initVars("DIR" => $sDir, "SN" => $serial);
+	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS]::[new]");
+
+	my($fd) = $driver->new($self->{SN}, $self->{DIR}, $self->{DEBUG}, $params);
+
+	return $fd;
 }
 
 sub _initVars {
@@ -337,7 +348,7 @@ __END__
 
 =head1 NAME
 
-EAFDSS::Base - base class for all other classes
+EAFDSS - base class for all other classes
 
 =head1 DESCRIPTION
 

@@ -2,7 +2,7 @@
 
 use strict;
 use lib "EAFDSS/lib";
-use EAFDSS::Base; 
+use EAFDSS; 
 use Getopt::Std;
 use Data::Dumper; 
 use Config::General qw(ParseConfig);
@@ -16,11 +16,13 @@ my(%progie) = ( name      => 'OpenEAFDSS-Util.pl',
 sub main() {
         my($driver, $params, $serial, $sDir, $cmd, $file) = init_progie();
 
-	#my($fd) = new EAFDSS($driver . "::" . $params, $serial, $sDir);
-	#if ($fd) {
-	#} else {
-	#	printf("Could not initialize signature device...\n");
-	#}
+	my($fd) = new EAFDSS($driver . "::" . $params, $serial, $sDir);
+	if ($fd) {
+		my($reply, $sign) = $fd->Sign("invoice.txt");
+		printf("    SIGN --> [%s]\n", $sign);
+	} else {
+		printf("Could not initialize signature device...\n");
+	}
 	
 }
 

@@ -10,16 +10,26 @@ package EAFDSS::Micrelec;
 use 5.006001;
 use strict;
 use warnings;
-use base qw(EAFDSS::Base);
 use Data::Dumper;
 use Carp;
 
-our @ISA = qw(EAFDSS::Base);
+our @ISA = qw();
 our $VERSION = '0.10';
 
 sub new {
-	my($class) = shift @_;
-	my($self)  = $class->SUPER::new(@_);
+	my($invocant) = shift @_;
+	my($self) = bless({}, ref $invocant || $invocant);
+
+	%{$self->{LEVEL}} = 
+	(
+		ERROR   => -1,
+		NORMAL  =>  0,
+		INFO    =>  1,
+		VERBOSE =>  2,
+		DEBUG	=>  3,
+		INSANE  =>  4
+	);
+	$self->{DEBUG} = 0;
 
 	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[new]");
 
@@ -370,6 +380,19 @@ sub time6toHost {
 	$var =~ s/(\d\d)(\d\d)(\d\d)/$1$2/;
 
 	return $var;
+}
+
+sub _Debug {
+	my($self) = shift @_;
+	my($lvl)  = shift @_;
+
+	if ($self->{LEVEL}{ERROR} == $lvl) {
+		croak(sprintf(shift @_, @_));
+	}
+
+	if ($self->{DEBUG} >= $lvl) {
+		printf("%s\n", sprintf(shift @_, @_));
+	}
 }
 
 # Preloaded methods go here.
