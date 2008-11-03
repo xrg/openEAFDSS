@@ -11,32 +11,10 @@ use 5.006001;
 use strict;
 use warnings;
 use Data::Dumper;
-use Carp;
 
-our @ISA = qw();
-our $VERSION = '0.10';
+use base qw ( EAFDSS::Base );
 
-sub new {
-	my($invocant) = shift @_;
-	my($self) = bless({}, ref $invocant || $invocant);
-
-	%{$self->{LEVEL}} = 
-	(
-		ERROR   => -1,
-		NORMAL  =>  0,
-		INFO    =>  1,
-		VERBOSE =>  2,
-		DEBUG	=>  3,
-		INSANE  =>  4
-	);
-	$self->{DEBUG} = 0;
-
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[new]");
-
-	return $self;
-}
-
-sub GetFullSign {
+sub PROTO_DetailSign {
 	my($self) = shift @_;
 	my($fh)   = shift @_;
 
@@ -49,12 +27,12 @@ sub GetFullSign {
 	}
 }
 
-sub GetSign {
+sub PROTO_GetSign {
 	my($self) = shift @_;
 	my($fh)   = shift @_;
 
 	my($chunk, %reply);
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[Sign]");
+	$self->debug(  "[EAFDSS::Micrelec]::[Sign]");
 	do {
 		%reply = $self->SendRequest(0x21, 0x00, "{/0");
 		if ($reply{DATA} =~ /^0E/) {
@@ -77,11 +55,11 @@ sub GetSign {
 	}
 }
 
-sub SetHeader {
+sub PROTO_SetHeader {
 	my($self)    = shift @_;
 	my($headers) = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[SetHeader]");
+	$self->debug(  "[EAFDSS::Micrelec]::[SetHeader]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "H/$headers");
 
 	if (%reply) {
@@ -92,10 +70,10 @@ sub SetHeader {
 	}
 }
 
-sub GetStatus {
+sub PROTO_GetStatus {
 	my($self) = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[GetStatus]");
+	$self->debug("Get Status");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "?");
 
 	if (%reply) {
@@ -106,10 +84,10 @@ sub GetStatus {
 	}
 }
 
-sub GetHeader {
+sub PROTO_GetHeader {
 	my($self) = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[GetHeader]");
+	$self->debug(  "[EAFDSS::Micrelec]::[GetHeader]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "h");
 	if (%reply) {
 		my($replyCode, $status1, $status2, @header) = split(/\//, $reply{DATA});
@@ -124,10 +102,10 @@ sub GetHeader {
 	}
 }
 
-sub ReadTime {
+sub PROTO_ReadTime {
 	my($self) = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[ReadTime]");
+	$self->debug(  "[EAFDSS::Micrelec]::[ReadTime]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "t");
 
 	if (%reply) {
@@ -144,10 +122,10 @@ sub ReadTime {
 	}
 }
 
-sub ReadDeviceID {
+sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[ReadDeviceID]");
+	$self->debug(  "[EAFDSS::Micrelec]::[ReadDeviceID]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "a");
 
 	if (%reply) {
@@ -158,10 +136,10 @@ sub ReadDeviceID {
 	}
 }
 
-sub VersionInfo {
+sub PROTO_VersionInfo {
 	my($self) = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "v");
 
 	if (%reply) {
@@ -172,11 +150,11 @@ sub VersionInfo {
 	}
 }
 
-sub DisplayMessage {
+sub PROTO_DisplayMessage {
 	my($self) = shift @_;
 	my($msg)  = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "7/1/$msg");
 
 	if (%reply) {
@@ -187,11 +165,11 @@ sub DisplayMessage {
 	}
 }
 
-sub ReadSignEntry {
+sub PROTO_ReadSignEntry {
 	my($self)  = shift @_;
 	my($index) = shift @_;
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "\$/$index");
 
 	if (%reply) {
@@ -202,12 +180,12 @@ sub ReadSignEntry {
 	}
 }
 
-sub ReadClosure {
+sub PROTO_ReadClosure {
 	my($self)  = shift @_;
 	my($index) = shift @_;
 	my(%reply, $replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
 
-	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::Micrelec]::[ReadClosure]");
+	$self->debug(  "[EAFDSS::Micrelec]::[ReadClosure]");
 	do {
 		%reply = $self->SendRequest(0x21, 0x00, "R/$index");
 		if (%reply) {
@@ -223,11 +201,11 @@ sub ReadClosure {
 	return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
 }
 
-sub ReadSummary {
+sub PROTO_ReadSummary {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 
-	$self->_Debug($self->{LEVEL}{INFO}, "[EAFDSS::Micrelec]::[ReadSummary]");
+	$self->debug(  "[EAFDSS::Micrelec]::[ReadSummary]");
 	do {
 		my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
 		if (%reply) {
@@ -243,11 +221,11 @@ sub ReadSummary {
 	return (hex($replyCode), $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 }
 
-sub IssueReport {
+sub PROTO_IssueReport {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2);
 
-	$self->_Debug($self->{LEVEL}{DEBUG}, "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
 	%reply = $self->SendRequest(0x21, 0x00, "x/2/0");
 
 	if (%reply) {
@@ -341,7 +319,7 @@ sub errMessage {
 	}
 }
 
-sub devStatus {
+sub UTIL_devStatus {
 	my($self)   = shift @_;
 	my($status) = sprintf("%08b", shift);
 	my(@status) = split(//, $status);
@@ -352,7 +330,7 @@ sub devStatus {
 	return ($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery);
 }
 
-sub appStatus {
+sub UTIL_appStatus {
 	my($self)   = shift @_;
 
 	my($status) = sprintf("%08b", shift);
@@ -364,7 +342,7 @@ sub appStatus {
 	return ($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull);
 }
 
-sub date6ToHost {
+sub UTIL_date6ToHost {
 	my($self) = shift @_;
 	my($var) = shift @_;
 
@@ -373,26 +351,13 @@ sub date6ToHost {
 	return $var;
 }
 
-sub time6toHost {
+sub UTIL_time6toHost {
 	my($self) = shift @_;
 	my($var) = shift @_;
 
 	$var =~ s/(\d\d)(\d\d)(\d\d)/$1$2/;
 
 	return $var;
-}
-
-sub _Debug {
-	my($self) = shift @_;
-	my($lvl)  = shift @_;
-
-	if ($self->{LEVEL}{ERROR} == $lvl) {
-		croak(sprintf(shift @_, @_));
-	}
-
-	if ($self->{DEBUG} >= $lvl) {
-		printf("%s\n", sprintf(shift @_, @_));
-	}
 }
 
 # Preloaded methods go here.
