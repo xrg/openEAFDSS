@@ -39,12 +39,13 @@ sub Sign {
         my($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign, $fullSign);
 
         $self->debug("Sign operation");
-        my($deviceDir) = $self->_createSignDir();
-	if (! $deviceDir) {
-		return $self->error("Error creating device");
-	}
 
         if (-e $fname) {
+		my($replySignDir, $deviceDir) = $self->_createSignDir();
+		if ($replySignDir != 0) {
+			return $self->error($replySignDir);
+		}
+
                 $self->debug(  "  Signing file [%s]", $fname);
                 open(FH, $fname);
                 ($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->PROTO_GetSign(*FH);
@@ -56,11 +57,11 @@ sub Sign {
                 $self->_createFileB($fullSign, $deviceDir, $date, $dailySigns, $nextZ);
         } else {
                 $self->debug(  "  No such file [%s]", $fname);
-                return -1;
+		return $self->error(64+2);
         }
 
 	if ($reply != 0) {
-		return $self->error($self->errMessage($reply));
+		return $self->error($reply);
 	} else {
 	        return $fullSign;
 	}
@@ -120,8 +121,8 @@ sub _createSignDir {
 	my($self) = shift @_;
 
 	my($result) = $self->_Recover();
-	if ($result) {
-		return undef;
+	if ($result != 0) {
+		return ($result, undef);
 	}
 
 	# Create The signs Dir
@@ -136,7 +137,7 @@ sub _createSignDir {
 		mkdir($deviceDir);
 	}
 
-	return $deviceDir;
+	return (0, $deviceDir);
 }
 
 sub _Recover {
@@ -147,13 +148,13 @@ sub _Recover {
 	if ($reply ne "0") { return $reply };
 
 	my($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery) = $self->UTIL_devStatus($status1);
-	if ($cmos != 1) { return };
+	if ($cmos != 1) { return 0 };
 
-	my($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull) = $self->appStatus($status1);
+	my($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull) = $self->UTIL_appStatus($status1);
 
 	$self->debug("   CMOS is set, going for recovery!");
 
-	($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->ReadSummary(0);
+	($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->PROTO_ReadSummary(0);
 	if ($reply != 0) {
 		$self->debug("   Aborting recovery because of ReadClosure reply [%d]", $reply);
 		return $reply
@@ -180,8 +181,8 @@ sub _Recover {
 		$self->debug("            Resigning file A [%s]", $curA);
 		open(FH, $curFileA);
 
-		my($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->GetSign(*FH);
-		my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+		my($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->PROTO_GetSign(*FH);
+		my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->UTIL_date6ToHost($date), substr($time, 0, 4), $self->{SN});
 		close(FH);
 
 		open(FB, ">>", $curFileB) || die "Error: $!";
@@ -190,7 +191,8 @@ sub _Recover {
 	}
 
 	my($replyFinal, $z) = $self->Report();
-	return($replyFinal, $z);
+
+	return($replyFinal);
 }
 
 sub _createFileA {

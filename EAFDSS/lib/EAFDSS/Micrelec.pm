@@ -10,6 +10,7 @@ package EAFDSS::Micrelec;
 use 5.006001;
 use strict;
 use warnings;
+use Switch;
 use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
@@ -240,82 +241,51 @@ sub errMessage {
 	my($self)    = shift @_;
 	my($errCode) = shift @_;
 
-	if ($errCode == -1) {
-		return("Device not accessible", "Check the network");
-	} elsif ($errCode == 0x00) {
-		return("No errors - success", "None");
-	} elsif ($errCode == 0x01) {
-		return("Wrong number of fields", "Check the command's field count");
-	} elsif ($errCode == 0x02) {
-		return("Field too long", "A field is long: check it & retry");
-	} elsif ($errCode == 0x03) {
-		return("Field too small", "A field is small: check it & retry");
-	} elsif ($errCode == 0x04) {
-		return("Field fixed size mismatch", "A field size is wrong: check it & retry");
-	} elsif ($errCode == 0x05) {
-		return("Field range or type check failed", "Check ranges or types in command");
-	} elsif ($errCode == 0x06) {
-		return("Bad request code", "Correct the request code (unknown)");
-	} elsif ($errCode == 0x09) {
-		return("Printing type bad", "Correct the specified printing style");
-	} elsif ($errCode == 0x0A) {
-		return("Cannot execute with day open", "Issue a Z report to close the day");
-	} elsif ($errCode == 0x0B) {
-		return("RTC programming requires jumper", "Short the 'clock' jumper and retry");
-	} elsif ($errCode == 0x0C) {
-		return("RTC date or time invalid", "Check the date/time range. Also check if date is prior to a date of a fiscal record");
-	} elsif ($errCode == 0x0D) {
-		return("No records in fiscal period", "No suggested action; the operation cannot be executed in the specified period");
-	} elsif ($errCode == 0x0E) {
-		return("Device is busy in another task", "Wait for the device to get ready");
-	} elsif ($errCode == 0x0F) {
-		return("No more header records allowed", "No suggested action; the header programming cannot be executed because the fiscal memory cannot hold more records");
-	} elsif ($errCode == 0x10) {
-		return("Cannot execute with block open", "The specified command requires no open signature block for proceeding. Closethe block and retry");
-	} elsif ($errCode == 0x11) {
-		return("Block not open", "The specified command requires a signature block to be open to execute. Open a block and retry");
-	} elsif ($errCode == 0x12) {
-		return("Bad data stream", "Means that the passed data to be signed are of incorrect format. The expected format is in HEX (hexadecimal) pairs, so expected field must have an even size and its contents must be in range '0'-'9' or 'A'-'F' inclusive");
-	} elsif ($errCode == 0x13) {
-		return("Bad signature field", "Means that the passed signature is of incorrect format. The expected format is of 40 characters formatted as 20 HEX (hexadecimal) pairs");
-	} elsif ($errCode == 0x14) {
-		return("Z closure time limit", "Means that 24 hours passed from the last Z closure. Issue a Z and retry");
-	} elsif ($errCode == 0x15) {
-		return("Z closure not found", "The specified Z closure number does not exist. Pass an existing Z number");
-	} elsif ($errCode == 0x16) {
-		return("Z closure record bad", "The requested Z record is unreadable (damaged). Device requires service");
-	} elsif ($errCode == 0x17) {
-		return("User browsing in progress", "The user is accessing the device by manual operation. The protocol usage is suspended until the user terminates the keyboard browsing. Just wait or inform application user");
-	} elsif ($errCode == 0x18) {
-		return("Signature daily limit reached", "The max number of signatures in a day have been issued. A Z closure is needed to free the daily storage memory");
-	} elsif ($errCode == 0x19) {
-		return("Printer paper end detected", "Replace the paper roll and retry");
-	} elsif ($errCode == 0x1A) {
-		return("Printer is offline", "Printer disconnection. Service required");
-	} elsif ($errCode == 0x1B) {
-		return("Fiscal unit is offline", " Fiscal disconnection. Service required");
-	} elsif ($errCode == 0x1C) {
-		return("Fatal hardware error", "Mostly fiscal errors. Service required");
-	} elsif ($errCode == 0x1D) {
-		return("Fiscal unit is full", "Need fiscal replacement. Service");
-	} elsif ($errCode == 0x1E) {
-		return("No data passed for signature", "Need to pass some data to close block");
-	} elsif ($errCode == 0x1F) {
-		return("Signature does not exist", "Correct requested signature number");
-	} elsif ($errCode == 0x20) {
-		return("Battery fault detected", "If problem persists, service required");
-	} elsif ($errCode == 0x21) {
-		return("Recovery in progress", "This command is not allowed when a recovery has started. Finish the recovery procedure and retry");
-	} elsif ($errCode == 0x22) {
-		return("Recovery only after CMOS reset", "Attempted to initiate a recovery procedure without a previous CMOS reset. The recovery is not needed");
-	} elsif ($errCode == 0x23) {
-		return("Real-Time Clock needs programming", "This means that the RTC has invalid data and needs to be reprogrammed. As a consequence, service is needed");
-	} elsif ($errCode == 0x24) {
-		return("Z closure date warning", "This is an error returned by a closure request, when the RTC's date has a value at least 48 hours later than the last closure time stamp (see XZreport)");
-	} elsif ($errCode == 0x25) {
-		return("Bad character in stream", "This error is returned when a stream sent contains one or more invalid characters. A table of allowed binary values is defined in 'table 2'. This error means that device has rejected the specified frame. A filtering of data sent to the device *must* be performed by host");
-	} else {
-		return(undef, undef);
+	switch ($errCode) {
+		case 00+0x00	 { return "No errors - success"}
+
+		case 00+0x01	 { return "Wrong number of fields"}
+		case 00+0x02	 { return "Field too long"}
+		case 00+0x03	 { return "Field too small"}
+		case 00+0x04	 { return "Field fixed size mismatch"}
+		case 00+0x05	 { return "Field range or type check failed"}
+		case 00+0x06	 { return "Bad request code"}
+		case 00+0x09	 { return "Printing type bad"}
+		case 00+0x0A	 { return "Cannot execute with day open"}
+		case 00+0x0B	 { return "RTC programming requires jumper"}
+		case 00+0x0C	 { return "RTC date or time invalid"}
+		case 00+0x0D	 { return "No records in fiscal period"}
+		case 00+0x0E	 { return "Device is busy in another task"}
+		case 00+0x0F	 { return "No more header records allowed"}
+		case 00+0x10	 { return "Cannot execute with block open"}
+		case 00+0x11	 { return "Block not open"}
+		case 00+0x12	 { return "Bad data stream"}
+		case 00+0x13	 { return "Bad signature field"}
+		case 00+0x14	 { return "Z closure time limit"}
+		case 00+0x15	 { return "Z closure not found"}
+		case 00+0x16	 { return "Z closure record bad"}
+		case 00+0x17	 { return "User browsing in progress"}
+		case 00+0x18	 { return "Signature daily limit reached"}
+		case 00+0x19	 { return "Printer paper end detected"}
+		case 00+0x1A	 { return "Printer is offline"}
+		case 00+0x1B	 { return "Fiscal unit is offline"}
+		case 00+0x1C	 { return "Fatal hardware error"}
+		case 00+0x1D	 { return "Fiscal unit is full"}
+		case 00+0x1E	 { return "No data passed for signature"}
+		case 00+0x1F	 { return "Signature does not exist"}
+		case 00+0x20	 { return "Battery fault detected"}
+		case 00+0x21	 { return "Recovery in progress"}
+		case 00+0x22	 { return "Recovery only after CMOS reset"}
+		case 00+0x23	 { return "Real-Time Clock needs programming"}
+		case 00+0x24	 { return "Z closure date warning"}
+		case 00+0x25	 { return "Bad character in stream"}
+		case 00+0x26	 { return ""}
+		case 00+0x01	 { return "Device not accessible"}
+
+		case 64+0x01	 { return "Device not accessible"}
+		case 64+0x02	 { return "No such file"}
+
+		else		 { return undef}
 	}
 }
 

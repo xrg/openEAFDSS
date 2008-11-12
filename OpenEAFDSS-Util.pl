@@ -39,9 +39,18 @@ sub cmdSign() {
 	my($dh)    = shift @_;
 	my($fname) = shift @_;
 
-	my($result) = $dh->Sign($fname) || die("ERROR: " . $dh->error() ."\n");
+	my($result) = $dh->Sign($fname);
+	my($errNo)  = $dh->error();
+	my($errMsg) = $dh->errMessage($errNo);
 
-	printf("%s\n", $result);
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
+
 }
 
 sub cmdStatus() {
