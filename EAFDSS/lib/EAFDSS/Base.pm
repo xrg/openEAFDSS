@@ -41,15 +41,15 @@ sub Sign {
         $self->debug("Sign operation");
         my($deviceDir) = $self->_createSignDir();
 	if (! $deviceDir) {
-		return 1;
+		return $self->error("Error creating device");
 	}
 
         if (-e $fname) {
                 $self->debug(  "  Signing file [%s]", $fname);
                 open(FH, $fname);
-                ($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->GetSign(*FH);
+                ($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->PROTO_GetSign(*FH);
                 $fullSign = sprintf("%s %04d %08d %s%s %s",
-                        $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+                        $sign, $dailySigns, $totalSigns, $self->UTIL_date6ToHost($date), substr($time, 0, 4), $self->{SN});
                 close(FH);
 
                 $self->_createFileA($fname, $deviceDir, $date, $dailySigns, $nextZ);
@@ -59,9 +59,62 @@ sub Sign {
                 return -1;
         }
 
-        return($reply, $fullSign);
+	if ($reply != 0) {
+		return $self->error($self->errMessage($reply));
+	} else {
+	        return $fullSign;
+	}
 }
 
+sub Status {
+        my($self) = shift @_;
+
+        $self->debug("Status operation");
+	my($replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->PROTO_ReadSummary();
+}
+
+
+sub GetTime {
+        my($self) = shift @_;
+
+        $self->debug("Status operation");
+	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+}
+
+sub SetTime {
+        my($self) = shift @_;
+
+        $self->debug("Status operation");
+	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+}
+
+sub Report {
+        my($self) = shift @_;
+
+        $self->debug("Status operation");
+	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+}
+
+sub Info {
+        my($self) = shift @_;
+
+        $self->debug("Status operation");
+	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+}
+
+sub GetHeaders {
+        my($self) = shift @_;
+
+        $self->debug("Status operation");
+	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+}
+
+sub SetHeaders {
+        my($self) = shift @_;
+
+        $self->debug("Status operation");
+	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+}
 
 sub _createSignDir {
 	my($self) = shift @_;
@@ -91,9 +144,9 @@ sub _Recover {
 	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 
 	($reply, $status1, $status2) = $self->PROTO_GetStatus();
-	if ($reply != 0) { return $reply};
+	if ($reply ne "0") { return $reply };
 
-	my($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery) = $self->devStatus($status1);
+	my($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery) = $self->UTIL_devStatus($status1);
 	if ($cmos != 1) { return };
 
 	my($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull) = $self->appStatus($status1);
@@ -139,6 +192,42 @@ sub _Recover {
 	my($replyFinal, $z) = $self->Report();
 	return($replyFinal, $z);
 }
+
+sub _createFileA {
+	my($self) = shift @_;
+	my($fn)   = shift @_;
+	my($dir)  = shift @_;
+	my($date) = shift @_;
+	my($ds)   = shift @_;
+	my($curZ) = shift @_;
+
+	my($fnA) = sprintf("%s/%s%s%04d%04d_a.txt", $dir, $self->{SN}, $self->UTIL_date6ToHost($date), $curZ, $ds);
+	$self->debug("   Creating File A [%s]", $fnA);
+	open(FH, $fn);
+	open(FA, ">", $fnA) || die "Error: $!";
+	seek(FH, 0, 0);
+	while (<FH>) {
+		print(FA $_);
+	};
+	close(FA);
+	close(FH);
+}
+
+sub _createFileB {
+	my($self) = shift @_;
+	my($fullSign)   = shift @_;
+	my($dir)  = shift @_;
+	my($date) = shift @_;
+	my($ds)   = shift @_;
+	my($curZ) = shift @_;
+
+	my($fnB) = sprintf("%s/%s%s%04d%04d_b.txt", $dir, $self->{SN}, $self->UTIL_date6ToHost($date), $curZ, $ds);
+	$self->debug("   Creating File B [%s]", $fnB);
+	open(FB, ">", $fnB) || die "Error: $!";
+	print(FB $fullSign);
+	close(FB);
+}
+
 
 sub DESTROY {
         my($self) = shift;

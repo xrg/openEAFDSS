@@ -69,6 +69,7 @@ sub SendRequest {
 		if ($self->{_TSYNC} == 0) {
 			if ( $self->_sdnpSync() == 0) {
 				$self->debug("        Sync Failed\n");
+				$self->error("Device Sync Failed");
 				setitimer(ITIMER_REAL, 0, 0);
 				return %reply;
 			}
@@ -76,8 +77,8 @@ sub SendRequest {
 
 		SEND:
 		# Send REQUEST(Connection's NextFSN) using 'RequestDataPacket';
-		my($msg) = $self->sdnpPacket($opcode, $opdata, $data);
-		$self->sdnpPrintFrame("      ----> [$msg]\n");
+		my($msg) = $self->_sdnpPacket($opcode, $opdata, $data);
+		$self->_sdnpPrintFrame("      ----> [%s]", $msg);
 		$self->{_SOCKET}->send($msg);
 
 		# Set T0 timer to 800 milliseconds;
@@ -89,15 +90,15 @@ sub SendRequest {
 
 			$self->{_SOCKET}->recv($frame, 512);
 			if ($frame) {
-				%reply = $self->analyzeFrame($frame);
-				$self->sdnpPrintFrame("      <---- [$frame]\n");
+				%reply = $self->_sdnpAnalyzeFrame($frame);
+				$self->_sdnpPrintFrame("      <---- [%s]", $msg);
 				$reply{'HOST'} = $self->{_SOCKET}->peerhost();
 			} else {
 				$reply{HOST} = -1;
 			}
 
 			# If a valid SDNP frame received then do
-			if ($self->sdnpFrameCheck(\%reply)) {
+			if ($self->_sdnpFrameCheck(\%reply)) {
 				# If received frame's FSN <> Request frame's FSN
 				if ($self->{_FSN} != $reply{SN}) {
 					$self->debug("        Bad FSN, Discarding\n");
@@ -125,7 +126,7 @@ sub SendRequest {
 						if ($checksum != $reply{CHECKSUM}) {
 							# Create and send NAK frame with FSN set to received FSN;
 							my($msg) = $self->sdnpPacket(0x13, 0x00);
-							$self->sdnpPrintFrame("      ----> [$msg]");
+							$self->_sdnpPrintFrame("      ----> [%s]\n", $msg);
 							$self->{_SOCKET}->send($msg);
 							next;
 						} else {
@@ -168,7 +169,7 @@ sub _sdnpSync {
 	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= -.100};
 	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
-		$self->debug(  "    Send Sync Request try #%d", $try);
+		$self->debug(  "      Send Sync Request try #%d", $try);
 
 		# Set timer T0 to 500 milliseconds;
 		$self->{_T0} = 1;
@@ -178,7 +179,7 @@ sub _sdnpSync {
 
 		# Send SYNC(IFSN) frame to connection IP address;
 		my($msg) = $self->_sdnpPacket(0x11, 0x00);
-		$self->_sdnpPrintFrame("      ----> [%s]", $msg);
+		$self->_sdnpPrintFrame("        ----> [%s]", $msg);
 		$self->{_SOCKET}->send($msg);
 
 		# Do until T0 expires:
@@ -188,8 +189,8 @@ sub _sdnpSync {
 
 			$self->{_SOCKET}->recv($frame, 512);
 			if ($frame) {
-				%reply = $self->analyzeFrame($frame);
-				$self->sdnpPrintFrame("      <---- [%s]", $frame);
+				%reply = $self->_sdnpAnalyzeFrame($frame);
+				$self->_sdnpPrintFrame("        <---- [%s]", $frame);
 				$reply{'HOST'} = $self->{_SOCKET}->peerhost();
 			} else {
 				$reply{HOST} = -1;
@@ -321,17 +322,17 @@ sub _sdnpPrintFrame {
 		$tmpString .= sprintf("%02X::", ord substr($msg, $i, 1));
 	}
 	$tmpString .= sprintf("%02X", ord substr($msg, length($msg) - 1, 1));
-	$self->debug(  $format, $tmpString);
+	$self->debug($format, $tmpString);
 
 	my(%frame) = $self->_sdnpAnalyzeFrame($msg);
-	$self->debug("\t    ID..................[%04X]", $frame{ID});
-	$self->debug("\t    SN..................[%04X]", $frame{SN});
-	$self->debug("\t    OPCODE..............[  %02X]", $frame{OPCODE});
-	$self->debug("\t    OPDATA..............[  %02X]", $frame{OPDATA});
-	$self->debug("\t    LENGTH..............[%04X]", $frame{LENGTH});
-	$self->debug("\t    CHECKSUM............[%04X]", $frame{CHECKSUM});
-	$self->debug("\t    HEADER_CHECKSUM.....[%04X]", $frame{HEADER_CHECKSUM});
-	$self->debug("\t    DATA................[%s]", $frame{DATA});
+	$self->debug("\t\t  ID..................[%04X]", $frame{ID});
+	$self->debug("\t\t  SN..................[%04X]", $frame{SN});
+	$self->debug("\t\t  OPCODE..............[  %02X]", $frame{OPCODE});
+	$self->debug("\t\t  OPDATA..............[  %02X]", $frame{OPDATA});
+	$self->debug("\t\t  LENGTH..............[%04X]", $frame{LENGTH});
+	$self->debug("\t\t  CHECKSUM............[%04X]", $frame{CHECKSUM});
+	$self->debug("\t\t  HEADER_CHECKSUM.....[%04X]", $frame{HEADER_CHECKSUM});
+	$self->debug("\t\t  DATA................[%s]", $frame{DATA});
 
 	return; 
 }

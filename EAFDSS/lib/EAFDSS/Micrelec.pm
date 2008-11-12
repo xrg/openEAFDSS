@@ -80,7 +80,7 @@ sub PROTO_GetStatus {
 		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
 		return (hex($replyCode), hex($status1), hex($status2));
 	} else {
-		return (-1);
+		return ($self->error());
 	}
 }
 
