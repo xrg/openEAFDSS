@@ -56,43 +56,93 @@ sub cmdSign() {
 sub cmdStatus() {
 	my($dh)    = shift @_;
 
-	my($result) = $dh->Status() || die("ERROR: " . $dh->error() ."\n");
+	my($result) = $dh->Status();
+	my($errNo)  = $dh->error();
+	my($errMsg) = $dh->errMessage($errNo);
 
-	printf("%s\n", $result);
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
 }
 
 sub cmdTime() {
 	my($dh)    = shift @_;
 	my($time)  = shift @_;
 
-	my($result) = $dh->Time() || die("ERROR: " . $dh->error() ."\n");
+	my($result);
+	if ($time) {
+		$result = $dh->SetTime($time);
+	} else {
+		$result = $dh->GetTime();
+	}
+	my($errNo)  = $dh->error();
+	my($errMsg) = $dh->errMessage($errNo);
 
-	printf("%s\n", $result);
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
 }
 
 sub cmdReport() {
 	my($dh)    = shift @_;
 
-	my($result) = $dh->Report() || die("ERROR: " . $dh->error() ."\n");
+	my($result) = $dh->Report();
+	my($errNo)  = $dh->error();
+	my($errMsg) = $dh->errMessage($errNo);
 
-	printf("%s\n", $result);
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
 }
 
 sub cmdInfo() {
 	my($dh)    = shift @_;
 
-	my($result) = $dh->Info() || die("ERROR: " . $dh->error() ."\n");
+	my($result) = $dh->Info();
+	my($errNo)  = $dh->error();
+	my($errMsg) = $dh->errMessage($errNo);
 
-	printf("%s\n", $result);
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
 }
 
 sub cmdHeaders() {
 	my($dh)      = shift @_;
 	my($headers) = shift @_;
 
-	my($result) = $dh->Headers() || die("ERROR: " . $dh->error() ."\n");
+	my($result);
+	if ($headers) {
+		$result = $dh->SetHeaders($headers);
+	} else {
+		$result = $dh->GetHeaders();
+	}
+	my($errNo)  = $dh->error();
+	my($errMsg) = $dh->errMessage($errNo);
 
-	printf("%s\n", $result);
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
 }
 
 sub init_progie() {

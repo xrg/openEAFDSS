@@ -226,7 +226,7 @@ sub PROTO_IssueReport {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2);
 
-	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug(  "[EAFDSS::Micrelec]::[IssueReport]");
 	%reply = $self->SendRequest(0x21, 0x00, "x/2/0");
 
 	if (%reply) {

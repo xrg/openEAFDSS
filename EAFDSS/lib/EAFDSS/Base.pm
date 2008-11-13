@@ -49,37 +49,52 @@ sub Sign {
                 $self->debug(  "  Signing file [%s]", $fname);
                 open(FH, $fname);
                 ($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->PROTO_GetSign(*FH);
-                $fullSign = sprintf("%s %04d %08d %s%s %s",
-                        $sign, $dailySigns, $totalSigns, $self->UTIL_date6ToHost($date), substr($time, 0, 4), $self->{SN});
                 close(FH);
 
-                $self->_createFileA($fname, $deviceDir, $date, $dailySigns, $nextZ);
-                $self->_createFileB($fullSign, $deviceDir, $date, $dailySigns, $nextZ);
+		if ($reply == 0) {
+			$fullSign = sprintf("%s %04d %08d %s%s %s",
+				$sign, $dailySigns, $totalSigns, $self->UTIL_date6ToHost($date), substr($time, 0, 4), $self->{SN});
+
+			$self->_createFileA($fname, $deviceDir, $date, $dailySigns, $nextZ);
+			$self->_createFileB($fullSign, $deviceDir, $date, $dailySigns, $nextZ);
+
+	        	return $fullSign;
+		} else {
+			return $self->error($reply);
+		}
         } else {
                 $self->debug(  "  No such file [%s]", $fname);
 		return $self->error(64+2);
         }
 
-	if ($reply != 0) {
-		return $self->error($reply);
-	} else {
-	        return $fullSign;
-	}
 }
 
 sub Status {
         my($self) = shift @_;
 
         $self->debug("Status operation");
-	my($replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->PROTO_ReadSummary();
+
+	my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->PROTO_ReadSummary();
+	if ($reply == 0) {
+		my($statusLine) = sprintf("%s %d %d %d %d %d", $self->{SN}, $lastZ, $total, $daily, $signBlock, $remainDaily);
+        	return $statusLine;
+	} else {
+		return $self->error($reply);
+	}
 }
 
 
 sub GetTime {
         my($self) = shift @_;
 
-        $self->debug("Status operation");
-	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+        $self->debug("Read time operation");
+
+	my($reply, $time) = $self->PROTO_ReadTime();
+	if ($reply == 0) {
+        	return $time;
+	} else {
+		return $self->error($reply);
+	}
 }
 
 sub SetTime {
@@ -92,15 +107,37 @@ sub SetTime {
 sub Report {
         my($self) = shift @_;
 
-        $self->debug("Status operation");
-	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+	my($replySignDir, $deviceDir) = $self->_createSignDir();
+	if ($replySignDir != 0) {
+		return $self->error($replySignDir);
+	}
+
+	$self->_validateFilesB();
+	$self->_validateFilesC();
+
+        $self->debug("Issue Report operation");
+
+	my($reply1) = $self->PROTO_IssueReport();
+	if ($reply1 != 0) {
+		return $self->error($reply1);
+	}
+
+	my($reply2, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->PROTO_ReadClosure(0);
+	$self->_createFileC($z, $deviceDir, $date, $time, $closure);
+
+        return $z;
 }
 
 sub Info {
         my($self) = shift @_;
 
-        $self->debug("Status operation");
-	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+        $self->debug("Read Info operation");
+	my($reply, $version) = $self->PROTO_VersionInfo();
+	if ($reply == 0) {
+        	return $version;
+	} else {
+		return $self->error($reply);
+	}
 }
 
 sub GetHeaders {
@@ -228,6 +265,103 @@ sub _createFileB {
 	open(FB, ">", $fnB) || die "Error: $!";
 	print(FB $fullSign);
 	close(FB);
+}
+
+sub _createFileC {
+        my($self) = shift @_;
+        my($z)    = shift @_;
+        my($dir)  = shift @_;
+        my($date) = shift @_;
+        my($time) = shift @_;
+        my($closure) = shift @_;
+
+        my($fnC) = sprintf("%s/%s%s%s%04d_c.txt", $dir, $self->{SN}, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $closure);
+        $self->debug(  "   Creating File C [%s]", $fnC);
+
+        open(FC, ">", $fnC) || die "Error: $!";
+        print(FC $z); 
+        close(FC);
+}
+
+
+sub _validateFilesB {
+        my($self) = shift @_;
+
+        my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->PROTO_ReadSummary();
+        if ($reply != 0) { return $reply};
+
+        my($regexA) = sprintf("%s\\d{6}%04d\\d{4}_a.txt", $self->{SN}, $lastZ + 1);
+        $self->debug(  "    Validating B Files for #%d Z with regex [%s]", $lastZ + 1 , $regexA);
+        my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
+
+        opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+        my(@afiles) = grep { /$regexA/ } readdir(DIR);
+        closedir(DIR);
+
+        foreach my $curA (@afiles) {
+                $self->debug(  "          Checking [%s]", $curA);
+                my($curFileA) = sprintf("%s/%s", $deviceDir, $curA);
+
+                my($curFileB) = $curFileA;
+                $curFileB =~ s/_a/_b/;
+
+                if (! -e $curFileB) { # TODO: Add size Check
+                        my($curB)  = $curA; $curB =~ s/_a/_b/;
+                        my($curIndex) = substr($curA, 21, 4); $curIndex =~ s/^0*//;
+                        $self->debug(  "            Recreating file B [%s] -- Index [%d]", $curB, $curIndex);
+
+                        my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $closure) = $self->ReadSignEntry($curIndex);
+                        my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
+
+                        open(FB, ">",  $curFileB) || die "Error: $!";
+                        print(FB $fullSign); 
+                        close(FB);
+                }
+        }
+
+        return;
+}
+
+sub _validateFilesC {
+        my($self) = shift @_;
+
+        my($reply, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = $self->PROTO_ReadSummary();
+        if ($reply != 0) { return $reply };
+
+        my($curClosure, $curFileC, $matched);
+
+        my($regexC) = sprintf("%s.*_c.txt", $self->{SN}, $lastZ + 1);
+        $self->debug(  "    Validating C Files for, total of [%d]", $lastZ);
+        my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
+
+        opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+        my(@cfiles) = grep { /$regexC/ } readdir(DIR);
+        closedir(DIR);
+
+        for ($curClosure = 1; $curClosure <= $lastZ;  $curClosure++) {
+                $self->debug(  "      Searching for [%d]", $curClosure);
+
+                $matched = 0;
+                foreach (@cfiles) {
+                        if (/${curClosure}_c\.txt$/) { 
+                                $curFileC = $_;
+                                $matched = 1;
+                                last;
+                        }
+                }
+
+                if ($matched) { 
+                        $self->debug(  "          Keeping file C    [%s] -- Index [%d]", $curFileC, $curClosure);
+                } else {
+                        my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->PROTO_ReadClosure($curClosure);
+                        my($fnC) = sprintf("%s%s%s%04d_c.txt", $sn, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $curClosure);
+                        $self->debug(  "          Recreating file C [%s] -- Index [%d]", $fnC, $curClosure);
+
+                        open(FC, ">", $deviceDir . "/" . $fnC) || die "Error: $!";
+                        print(FC $z); 
+                        close(FC);
+                }
+        }
 }
 
 
