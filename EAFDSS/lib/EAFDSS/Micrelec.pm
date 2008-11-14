@@ -60,14 +60,14 @@ sub PROTO_SetHeader {
 	my($self)    = shift @_;
 	my($headers) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[SetHeader]");
+	$self->debug("Set Headers");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "H/$headers");
 
 	if (%reply) {
 		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
 		return (hex($replyCode));
 	} else {
-		return (-1);
+		return ($self->error());
 	}
 }
 
@@ -88,16 +88,20 @@ sub PROTO_GetStatus {
 sub PROTO_GetHeader {
 	my($self) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[GetHeader]");
+	$self->debug(  "Get Headers");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "h");
+
 	if (%reply) {
 		my($replyCode, $status1, $status2, @header) = split(/\//, $reply{DATA});
-		my($i);
-		for ($i=0; $i < 12; $i+=2) {
-			$header[$i+1] =~ s/\s*$//;
+		if (hex($replyCode) == 0) {
+			my($i);
+			for ($i=0; $i < 12; $i+=2) {
+				$header[$i+1] =~ s/\s*$//;
+			}
+			return (hex($replyCode), @header);
+		} else {
+			return (hex($replyCode));
 		}
-
-		return (hex($replyCode), @header);
 	} else {
 		return (-1);
 	}
@@ -111,18 +115,36 @@ sub PROTO_ReadTime {
 
 	if (%reply) {
 		my($replyCode, $status1, $status2, $date, $time) = split(/\//, $reply{DATA});
-		my($day) = substr($date, 0, 2);
-		my($month) = substr($date, 2, 2);
-		my($year) = substr($date, 4, 2);
-		my($hour) = substr($time, 0, 2);
-		my($min) = substr($time, 2, 2);
-		my($sec) = substr($time, 4, 2);
-		return (hex($replyCode), sprintf("%s/%s/%s %s:%s:%s", $day, $month, $year, $hour, $min, $sec ));
+		if (hex($replyCode) == 0) {
+			my($day) = substr($date, 0, 2);
+			my($month) = substr($date, 2, 2);
+			my($year) = substr($date, 4, 2);
+			my($hour) = substr($time, 0, 2);
+			my($min) = substr($time, 2, 2);
+			my($sec) = substr($time, 4, 2);
+			return (hex($replyCode), sprintf("%s/%s/%s %s:%s:%s", $day, $month, $year, $hour, $min, $sec ));
+		} else {
+			return (hex($replyCode));
+		}
 	} else {
 		return (-1);
 	}
 }
 
+sub PROTO_SetTime {
+	my($self) = shift @_;
+	my($time) = shift @_;
+
+	$self->debug("Set Time");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "T/$time");
+
+	if (%reply) {
+		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
+		return (hex($replyCode));
+	} else {
+		return ($self->error());
+	}
+}
 sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
 
@@ -284,6 +306,7 @@ sub errMessage {
 
 		case 64+0x01	 { return "Device not accessible"}
 		case 64+0x02	 { return "No such file"}
+		case 64+0x03	 { return "Device Sync Failed"}
 
 		else		 { return undef}
 	}

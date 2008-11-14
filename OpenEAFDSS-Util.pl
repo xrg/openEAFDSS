@@ -27,10 +27,10 @@ sub main() {
 
 	switch (uc($cmdType)) {
 		case "SIGN"    { cmdSign($dh, $cmdParam)    }
-		case "STATUS"  { cmdStatus($dh)             }
-		case "TIME"    { cmdTime($dh, $cmdParam)    }
 		case "REPORT"  { cmdReport($dh)             }
+		case "STATUS"  { cmdStatus($dh)             }
 		case "INFO"    { cmdInfo($dh)               }
+		case "TIME"    { cmdTime($dh, $cmdParam)    }
 		case "HEADERS" { cmdHeaders($dh, $cmdParam) }
 	}
 }
@@ -40,109 +40,126 @@ sub cmdSign() {
 	my($fname) = shift @_;
 
 	my($result) = $dh->Sign($fname);
-	my($errNo)  = $dh->error();
-	my($errMsg) = $dh->errMessage($errNo);
-
 	if ($result) {
 		printf("%s\n", $result);
 		exit(0);
 	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
 		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
 		exit($errNo);
 	}
 
-}
-
-sub cmdStatus() {
-	my($dh)    = shift @_;
-
-	my($result) = $dh->Status();
-	my($errNo)  = $dh->error();
-	my($errMsg) = $dh->errMessage($errNo);
-
-	if ($result) {
-		printf("%s\n", $result);
-		exit(0);
-	} else {
-		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
-		exit($errNo);
-	}
-}
-
-sub cmdTime() {
-	my($dh)    = shift @_;
-	my($time)  = shift @_;
-
-	my($result);
-	if ($time) {
-		$result = $dh->SetTime($time);
-	} else {
-		$result = $dh->GetTime();
-	}
-	my($errNo)  = $dh->error();
-	my($errMsg) = $dh->errMessage($errNo);
-
-	if ($result) {
-		printf("%s\n", $result);
-		exit(0);
-	} else {
-		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
-		exit($errNo);
-	}
 }
 
 sub cmdReport() {
-	my($dh)    = shift @_;
+	my($dh) = shift @_;
 
 	my($result) = $dh->Report();
-	my($errNo)  = $dh->error();
-	my($errMsg) = $dh->errMessage($errNo);
-
 	if ($result) {
 		printf("%s\n", $result);
 		exit(0);
 	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
+}
+sub cmdStatus() {
+	my($dh) = shift @_;
+
+	my($result) = $dh->Status();
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
 		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
 		exit($errNo);
 	}
 }
 
 sub cmdInfo() {
-	my($dh)    = shift @_;
+	my($dh) = shift @_;
 
 	my($result) = $dh->Info();
-	my($errNo)  = $dh->error();
-	my($errMsg) = $dh->errMessage($errNo);
-
 	if ($result) {
 		printf("%s\n", $result);
 		exit(0);
 	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
 		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
 		exit($errNo);
 	}
+}
+
+sub cmdTime() {
+	my($dh)   = shift @_;
+	my($time) = shift @_;
+
+	if ($time) {
+		my($result) = $dh->SetTime($time);
+		if ( defined $result && ($result == 0)) {
+			printf("Time successfully set\n");
+			exit(0);
+		} else {
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
+			printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+			exit($errNo);
+		}
+	} else {
+		my($result) = $dh->GetTime();
+		if ($result) {
+			printf("%s\n", $result);
+			exit(0);
+		} else {
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
+			printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+			exit($errNo);
+		}
+	}
+
 }
 
 sub cmdHeaders() {
 	my($dh)      = shift @_;
 	my($headers) = shift @_;
 
-	my($result);
 	if ($headers) {
-		$result = $dh->SetHeaders($headers);
+		my($result) = $dh->SetHeaders($headers);
+		if ( defined $result && ($result == 0)) {
+			printf("Headers successfully set\n");
+			exit(0);
+		} else {
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
+			printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+			exit($errNo);
+		}
 	} else {
-		$result = $dh->GetHeaders();
+		my($result) = $dh->GetHeaders();
+		if ($result) {
+			my(@headersArray) = @$result;
+			my($i);
+			for ($i=0; $i < 12; $i+=2) {
+				if ($headersArray[$i] ne '') {
+					printf("[Line %d] [Type:%d] --> %s\n", $i/2+1, $headersArray[$i], $headersArray[$i+1]);
+				}
+			}
+			exit(0);
+		} else {
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
+			printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+			exit($errNo);
+		}
 	}
-	my($errNo)  = $dh->error();
-	my($errMsg) = $dh->errMessage($errNo);
 
-	if ($result) {
-		printf("%s\n", $result);
-		exit(0);
-	} else {
-		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
-		exit($errNo);
-	}
 }
 
 sub init_progie() {

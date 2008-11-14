@@ -88,7 +88,6 @@ sub GetTime {
         my($self) = shift @_;
 
         $self->debug("Read time operation");
-
 	my($reply, $time) = $self->PROTO_ReadTime();
 	if ($reply == 0) {
         	return $time;
@@ -99,9 +98,15 @@ sub GetTime {
 
 sub SetTime {
         my($self) = shift @_;
+        my($time) = shift @_;
 
-        $self->debug("Status operation");
-	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+        $self->debug("Set time operation");
+	my($reply) = $self->PROTO_SetTime($time);
+	if ($reply == 0) {
+        	return 0;
+	} else {
+		return $self->error($reply);
+	}
 }
 
 sub Report {
@@ -143,15 +148,26 @@ sub Info {
 sub GetHeaders {
         my($self) = shift @_;
 
-        $self->debug("Status operation");
-	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+        $self->debug("Read Headers operation");
+	my($reply, @headers) = $self->PROTO_GetHeader();
+	if ($reply == 0) {
+		return \@headers;
+	} else {
+		return $self->error($reply);
+	}
 }
 
 sub SetHeaders {
-        my($self) = shift @_;
+        my($self)    = shift @_;
+        my($headers) = shift @_;
 
-        $self->debug("Status operation");
-	my($reply, $status1, $status2) = $self->PROTO_ReadTime();
+        $self->debug("Set Headers operation");
+	my($reply) = $self->PROTO_SetHeader($headers);
+	if ($reply == 0) {
+		return 0;
+	} else {
+		return $self->error($reply);
+	}
 }
 
 sub _createSignDir {

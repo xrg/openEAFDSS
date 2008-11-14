@@ -69,7 +69,7 @@ sub SendRequest {
 		if ($self->{_TSYNC} == 0) {
 			if ( $self->_sdnpSync() == 0) {
 				$self->debug("        Sync Failed\n");
-				$self->error("Device Sync Failed");
+				$self->error(64+3);
 				setitimer(ITIMER_REAL, 0, 0);
 				return %reply;
 			}
