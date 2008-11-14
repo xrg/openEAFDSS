@@ -167,9 +167,13 @@ sub PROTO_VersionInfo {
 
 	if (%reply) {
 		my($replyCode, $status1, $status2, $vendor, $model, $version) = split(/\//, $reply{DATA});
-		return (hex($replyCode), sprintf("%s %s version %s", $vendor, $model, $version));
+		if (hex($replyCode) == 0) {
+			return (hex($replyCode), sprintf("%s %s version %s", $vendor, $model, $version));
+		} else {
+			return (hex($replyCode));
+		}
 	} else {
-		return (-1);
+		return ($self->error());
 	}
 }
 
