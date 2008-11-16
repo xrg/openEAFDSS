@@ -21,7 +21,12 @@ sub main() {
 			"SN"     => $serial,
 			"DIR"    => $sDir,
 			"DEBUG"  => $verbal
-		) || print("ERROR: " . EAFDSS->error() ."\n");
+		);
+
+	if (! $dh) {
+		print("ERROR: " . EAFDSS->error() ."\n");
+		exit -1;
+	}
 
 	my($cmdType, $cmdParam) = split(/\s+/, $cmd);
 
@@ -187,6 +192,11 @@ sub init_progie() {
         if ($opt{s}) {$serial = $opt{s}};
         if ($opt{p}) {$params = $opt{p}};
         if ($opt{i}) {$sDir   = $opt{i}};
+
+	if (! defined $driver) { printf("No driver defined\n");        exit(0)}; 
+	if (! defined $params) { printf("No driver params defined\n"); exit(0)}; 
+	if (! defined $sDir)   { printf("No signs dir defined\n");     exit(0)}; 
+	if (! defined $serial) { printf("No serial defined\n");        exit(0)}; 
 
         if ($valid =~ /FALSE/) {
 		print_help();

@@ -11,6 +11,7 @@ package EAFDSS::SDNP;
 use 5.006001;
 use strict;
 use warnings;
+use Carp;
 use Socket;
 use Time::HiRes qw ( setitimer ITIMER_REAL time );
 use IO::Socket::INET;
@@ -34,6 +35,9 @@ sub init {
 
 	$self->debug("  Socket Initialization to IP/hostname [%s]", $self->{IP});
 	$self->{_SOCKET} = new IO::Socket::INET->new(PeerPort => $self->{PORT}, Proto => 'udp', PeerAddr => $self->{IP});
+	if (! defined $self->{_SOCKET}) {
+		return undef;
+	}
 
 	$self->debug("  Setting synced to FALSE");
 	$self->{_SYNCED} = 0;

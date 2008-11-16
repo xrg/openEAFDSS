@@ -216,7 +216,7 @@ sub _Recover {
 	my($regexA) = sprintf("%s\\d{6}%04d\\d{4}_a.txt", $self->{SN}, $lastZ + 1);
 	my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
 
-	opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+	opendir(DIR, $deviceDir) || croak "can't opendir $deviceDir: $!";
 	my(@afiles) = grep { /$regexA/ } readdir(DIR);
 	closedir(DIR);
 
@@ -238,7 +238,7 @@ sub _Recover {
 		my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->UTIL_date6ToHost($date), substr($time, 0, 4), $self->{SN});
 		close(FH);
 
-		open(FB, ">>", $curFileB) || die "Error: $!";
+		open(FB, ">>", $curFileB) || croak "Error: $!";
 		print(FB "\n" . $fullSign); 
 		close(FB);
 	}
@@ -259,7 +259,7 @@ sub _createFileA {
 	my($fnA) = sprintf("%s/%s%s%04d%04d_a.txt", $dir, $self->{SN}, $self->UTIL_date6ToHost($date), $curZ, $ds);
 	$self->debug("   Creating File A [%s]", $fnA);
 	open(FH, $fn);
-	open(FA, ">", $fnA) || die "Error: $!";
+	open(FA, ">", $fnA) || croak "Error: $!";
 	seek(FH, 0, 0);
 	while (<FH>) {
 		print(FA $_);
@@ -278,7 +278,7 @@ sub _createFileB {
 
 	my($fnB) = sprintf("%s/%s%s%04d%04d_b.txt", $dir, $self->{SN}, $self->UTIL_date6ToHost($date), $curZ, $ds);
 	$self->debug("   Creating File B [%s]", $fnB);
-	open(FB, ">", $fnB) || die "Error: $!";
+	open(FB, ">", $fnB) || croak "Error: $!";
 	print(FB $fullSign);
 	close(FB);
 }
@@ -294,7 +294,7 @@ sub _createFileC {
         my($fnC) = sprintf("%s/%s%s%s%04d_c.txt", $dir, $self->{SN}, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $closure);
         $self->debug(  "   Creating File C [%s]", $fnC);
 
-        open(FC, ">", $fnC) || die "Error: $!";
+        open(FC, ">", $fnC) || croak "Error: $!";
         print(FC $z); 
         close(FC);
 }
@@ -310,7 +310,7 @@ sub _validateFilesB {
         $self->debug(  "    Validating B Files for #%d Z with regex [%s]", $lastZ + 1 , $regexA);
         my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
 
-        opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+        opendir(DIR, $deviceDir) || croak "can't opendir $deviceDir: $!";
         my(@afiles) = grep { /$regexA/ } readdir(DIR);
         closedir(DIR);
 
@@ -329,7 +329,7 @@ sub _validateFilesB {
                         my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $closure) = $self->ReadSignEntry($curIndex);
                         my($fullSign) = sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN});
 
-                        open(FB, ">",  $curFileB) || die "Error: $!";
+                        open(FB, ">",  $curFileB) || croak "Error: $!";
                         print(FB $fullSign); 
                         close(FB);
                 }
@@ -350,7 +350,7 @@ sub _validateFilesC {
         $self->debug(  "    Validating C Files for, total of [%d]", $lastZ);
         my($deviceDir) = sprintf("%s/%s", $self->{DIR}, $self->{SN});
 
-        opendir(DIR, $deviceDir) || die "can't opendir $deviceDir: $!";
+        opendir(DIR, $deviceDir) || croak "can't opendir $deviceDir: $!";
         my(@cfiles) = grep { /$regexC/ } readdir(DIR);
         closedir(DIR);
 
@@ -373,7 +373,7 @@ sub _validateFilesC {
                         my($fnC) = sprintf("%s%s%s%04d_c.txt", $sn, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $curClosure);
                         $self->debug(  "          Recreating file C [%s] -- Index [%d]", $fnC, $curClosure);
 
-                        open(FC, ">", $deviceDir . "/" . $fnC) || die "Error: $!";
+                        open(FC, ">", $deviceDir . "/" . $fnC) || croak "Error: $!";
                         print(FC $z); 
                         close(FC);
                 }
