@@ -2,13 +2,12 @@
 
 DEVICE="DUMMY"
 #DEVICE="LAN"
-DEBUG="-v"
-#DEBUG=""
+#DEBUG="-v"
+DEBUG=""
 
 echo -n " * SIGN         --> "
 SIGN=`./OpenEAFDSS-Util.pl $DEBUG -n $DEVICE -e "SIGN invoice.txt"`
 echo $SIGN
-exit;
 sleep 2
 
 

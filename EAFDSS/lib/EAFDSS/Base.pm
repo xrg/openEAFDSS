@@ -291,7 +291,7 @@ sub _createFileC {
         my($time) = shift @_;
         my($closure) = shift @_;
 
-        my($fnC) = sprintf("%s/%s%s%s%04d_c.txt", $dir, $self->{SN}, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $closure);
+        my($fnC) = sprintf("%s/%s%s%s%04d_c.txt", $dir, $self->{SN}, $date, $self->UTIL_time6toHost($time), $closure);
         $self->debug(  "   Creating File C [%s]", $fnC);
 
         open(FC, ">", $fnC) || croak "Error: $!";

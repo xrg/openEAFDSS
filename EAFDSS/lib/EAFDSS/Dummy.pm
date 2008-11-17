@@ -13,7 +13,7 @@ use warnings;
 use Carp;
 use Switch;
 use Digest::SHA1  qw(sha1_hex);
-use Config::INI::Simple;
+use Config::IniHash;
 use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
@@ -23,7 +23,7 @@ sub init {
 	my($config) = @_;
 	my($self)   = $class->SUPER::init(@_);
 
-	$self->debug("Initializing");
+	$self->debug("  [PROTO] Initializing");
 
 	if (! exists $config->{PARAMS}) {
 		return $self->error("No parameters have been given!");
@@ -34,13 +34,13 @@ sub init {
 	if ( ! -e $self->{FILENAME} ) {
 		open(DUMMY, ">", $self->{FILENAME}) || croak "Error: $!";
 		print(DUMMY "[MAIN]\n");
-		print(DUMMY "  VERSION    = Dummy EAFDSS\n");
-		print(DUMMY "  SERIAL     = $self->{SN}\n");
-		print(DUMMY "  MAX_FISCAL = 100\n");
-		print(DUMMY "  MAX_SIGNS  = 1000\n");
-		print(DUMMY "  CUR_FISCAL = 1\n");
-		print(DUMMY "  CUR_SIGN   = 1\n");
-		print(DUMMY "  TOTAL_SIGN = 1\n\n");
+		print(DUMMY "VERSION    = Dummy EAFDSS\n");
+		print(DUMMY "SERIAL     = $self->{SN}\n");
+		print(DUMMY "MAX_FISCAL = 100\n");
+		print(DUMMY "MAX_SIGNS  = 1000\n");
+		print(DUMMY "CUR_FISCAL = 1\n");
+		print(DUMMY "CUR_SIGN   = 1\n");
+		print(DUMMY "TOTAL_SIGN = 1\n\n");
 		print(DUMMY "[FISCAL]\n\n");
 		print(DUMMY "[SIGNS]\n");
 		close(DUMMY);
@@ -53,7 +53,9 @@ sub PROTO_GetSign {
 	my($self) = shift @_;
 	my($fh)   = shift @_;
 
-	my($replyCode, $totalSigns, $dailySigns, $date, $time, $sign, $nextZ);
+	my($replyCode, $totalSigns, $dailySigns, $date, $time, $sign, $nextZ, $maxFiscal, $maxSigns);
+
+	$self->debug("  [PROTO] Get Sign");
 
 	my($data, $chunk) = ("", "");
 	while (read($fh, $chunk, 400)) {
@@ -64,40 +66,44 @@ sub PROTO_GetSign {
 	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
 	$time = sprintf("%02d%02d%02d", $hour, $min, $sec);
 
-	my($dummy) = new Config::INI::Simple;
-  	$dummy->read($self->{FILENAME});
+	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
 
 	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
 	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
 	$nextZ      = $dummy->{MAIN}->{CUR_FISCAL};
 
+	$maxFiscal  = $dummy->{MAIN}->{MAX_FISCAL};
+	$maxSigns   = $dummy->{MAIN}->{MAX_SIGNS};
+
+	if ($dailySigns >= $maxSigns) {
+		return (-1);
+	}
+
 	$dummy->{MAIN}->{TOTAL_SIGN} = $totalSigns + 1;
 	$dummy->{MAIN}->{CUR_SIGN}   = $dailySigns + 1;
 
-  	$dummy->write($self->{FILENAME});
-
 	$data .= sprintf("%s%08d%04d%s%s", $self->{SN}, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time));
 
-	if (1) { 
-		$sign = uc(sha1_hex($data));
-		return (0, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign);
-	} else {
-		return (-1);
-	}
+	$sign = uc(sha1_hex($data));
+	$dummy->{SIGNS}->{$dailySigns} = $sign;
+
+  	WriteINI($self->{FILENAME}, $dummy);
+
+	return (0, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign);
 }
 
 sub PROTO_SetHeader {
 	my($self)    = shift @_;
 	my($headers) = shift @_;
 
-	$self->debug("Set Headers");
-	return 0;
+	$self->debug("  [PROTO] Set Headers");
+	return 64+04;
 }
 
 sub PROTO_GetStatus {
 	my($self) = shift @_;
 
-	$self->debug("Get Status");
+	$self->debug("  [PROTO] Get Status");
 	if (-e $self->{FILENAME}) {
 		return (0, 0, 0);
 	} else {
@@ -108,14 +114,14 @@ sub PROTO_GetStatus {
 sub PROTO_GetHeader {
 	my($self) = shift @_;
 
-	$self->debug("Get Headers");
-	return (0, (0, "No Headers supported"));
+	$self->debug("  [PROTO] Get Headers");
+	return 64+04;
 }
 
 sub PROTO_ReadTime {
 	my($self) = shift @_;
 
-	$self->debug("Read Time");
+	$self->debug("  [PROTO] Read Time");
 	my($sec, $min, $hour, $mday, $mon, $year) = localtime();
 	return (0, sprintf("%02d/%02d/%02d %02d:%02d:%02d", $mday, $mon+1, $year-100, $hour, $min, $sec));
 }
@@ -124,19 +130,19 @@ sub PROTO_SetTime {
 	my($self) = shift @_;
 	my($time) = shift @_;
 
-	$self->debug("Set Time");
-	return 0;
+	$self->debug("  [PROTO] Set Time");
+	return 64+04;
 }
 
 sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[ReadDeviceID]");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "a");
+	$self->debug("  [PROTO] Read Device ID");
+	my($dummy) = ReadINI($self->{FILENAME});
 
-	if (%reply) {
-		my($replyCode, $status1, $status2, $deviceId) = split(/\//, $reply{DATA});
-		return (hex($replyCode), $deviceId);
+	if ($dummy) {
+		my($deviceId) = $dummy->{MAIN}->{SERIAL};
+		return (0, $deviceId);
 	} else {
 		return (-1);
 	}
@@ -145,18 +151,14 @@ sub PROTO_ReadDeviceID {
 sub PROTO_VersionInfo {
 	my($self) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "v");
+	$self->debug("  [PROTO] Read Device Version");
+	my($dummy) = ReadINI($self->{FILENAME});
 
-	if (%reply) {
-		my($replyCode, $status1, $status2, $vendor, $model, $version) = split(/\//, $reply{DATA});
-		if (hex($replyCode) == 0) {
-			return (hex($replyCode), sprintf("%s %s version %s", $vendor, $model, $version));
-		} else {
-			return (hex($replyCode));
-		}
+	if ($dummy) {
+		my($version) = $dummy->{MAIN}->{VERSION};
+		return (0, $version);
 	} else {
-		return ($self->error());
+		return (-1);
 	}
 }
 
@@ -164,7 +166,7 @@ sub PROTO_ReadSignEntry {
 	my($self)  = shift @_;
 	my($index) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug("  [PROTO] Read Sign Entry");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "\$/$index");
 
 	if (%reply) {
@@ -178,57 +180,80 @@ sub PROTO_ReadSignEntry {
 sub PROTO_ReadClosure {
 	my($self)  = shift @_;
 	my($index) = shift @_;
-	my(%reply, $replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
+	my(%reply, $replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure, $curZ);
 
-	$self->debug(  "[EAFDSS::Micrelec]::[ReadClosure]");
-	do {
-		%reply = $self->SendRequest(0x21, 0x00, "R/$index");
-		if (%reply) {
-			($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = split(/\//, $reply{DATA});
-		} else {
-			return (-1);
-		}
-		if ($replyCode =~ /^0E$/) {
-			sleep 1;
-		}
-	} until ($replyCode !~ /^0E$/);
+	$self->debug("  [PROTO] Read Closure [%d]", $index);
+	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
 
-	return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
+	my($sec, $min, $hour, $mday, $mon, $year) = localtime();
+	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
+	$time = sprintf("%02d%02d%02d", $hour, $min, $sec);
+
+	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
+	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
+	$curZ       = $dummy->{MAIN}->{CUR_FISCAL};
+
+	if ($index == 0) {
+		$z = $dummy->{FISCAL}->{$curZ-1};
+	} else {
+		$z = $dummy->{FISCAL}->{$index};
+	}
+	$closure    = $curZ-1;
+
+	return (0, 1, 1, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $z, $self->{SN}, $closure);
 }
 
 sub PROTO_ReadSummary {
 	my($self)  = shift @_;
-	my(%reply, $replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
+	my(%reply, $replyCode, $status1, $status2, $lastZ, $totalSigns, $dailySigns, $maxSigns);
 
-	$self->debug(  "[EAFDSS::Micrelec]::[ReadSummary]");
-	do {
-		my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
-		if (%reply) {
-			($replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily) = split(/\//, $reply{DATA});
-		} else {
-			return (-1);
-		}
-		if ($replyCode =~ /^0E$/) {
-			sleep 1;
-		}
-	} until ($replyCode !~ /^0E$/);
+	$self->debug("  [PROTO] Read Summary");
+	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
 
-	return (hex($replyCode), $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
+	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
+	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
+	$lastZ      = $dummy->{MAIN}->{CUR_FISCAL};
+
+	$maxSigns   = $dummy->{MAIN}->{MAX_SIGNS};
+
+	return (0, $status1, $status2, $lastZ-1, $totalSigns, $dailySigns, 0, $maxSigns - $dailySigns);
 }
 
 sub PROTO_IssueReport {
 	my($self)  = shift @_;
-	my(%reply, $replyCode, $status1, $status2);
+	my(%reply, $replyCode, $status1, $status2, $dailySigns, $lastZ, $i, $z, $data, $time, $date, $totalSigns);
 
-	$self->debug(  "[EAFDSS::Micrelec]::[IssueReport]");
-	%reply = $self->SendRequest(0x21, 0x00, "x/2/0");
+	$self->debug("  [PROTO] Issue Report");
+	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
 
-	if (%reply) {
-		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
-		return (hex($replyCode));
-	} else {
-		return (-1);
+	my($sec, $min, $hour, $mday, $mon, $year) = localtime();
+	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
+	$time = sprintf("%02d%02d%02d", $hour, $min, $sec);
+
+	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
+	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
+	$lastZ      = $dummy->{MAIN}->{CUR_FISCAL};
+
+	$dummy->{MAIN}->{CUR_FISCAL} = $dummy->{MAIN}->{CUR_FISCAL} + 1;
+
+	$data = "";
+	for ($i=1; $i < $dummy->{MAIN}->{CUR_SIGN}; $i++) {
+		print "  S > " . $dummy->{SIGNS}->{$i} . "\n";
+		$data .= $dummy->{SIGNS}->{$i};
 	}
+	for ($i=1; $i < $dummy->{MAIN}->{CUR_FISCAL} - 1; $i++) {
+		print "  F > " . $dummy->{FISCAL}->{$i} . "\n";
+		$data .= $dummy->{FISCAL}->{$i};
+	}
+	printf("  --> %s\n", $data);
+
+	$z = uc(sha1_hex($data));
+	$dummy->{FISCAL}->{$lastZ} = $z;
+	$dummy->{MAIN}->{CUR_SIGN} = 1;
+
+  	WriteINI($self->{FILENAME}, $dummy);
+
+	return (0);
 }
 
 sub errMessage {
@@ -279,6 +304,7 @@ sub errMessage {
 		case 64+0x01	 { return "Device not accessible"}
 		case 64+0x02	 { return "No such file"}
 		case 64+0x03	 { return "Device Sync Failed"}
+		case 64+0x04	 { return "Function not supported"}
 
 		else		 { return undef}
 	}
