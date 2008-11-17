@@ -241,10 +241,14 @@ sub PROTO_IssueReport {
 		print "  S > " . $dummy->{SIGNS}->{$i} . "\n";
 		$data .= $dummy->{SIGNS}->{$i};
 	}
-	for ($i=1; $i < $dummy->{MAIN}->{CUR_FISCAL} - 1; $i++) {
-		print "  F > " . $dummy->{FISCAL}->{$i} . "\n";
-		$data .= $dummy->{FISCAL}->{$i};
-	}
+	#for ($i=1; $i < $dummy->{MAIN}->{CUR_FISCAL} - 1; $i++) {
+		#print "  F > " . $dummy->{FISCAL}->{$i} . "\n";
+		#$data .= $dummy->{FISCAL}->{$i};
+		#$data .= sprintf("%s%08d%04d", $self->{SN}, $totalSigns, $dailySigns);
+		#$data .= sprintf("%s%08d%04d%s%s", $self->{SN}, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time));
+		#my($fullSign) = sprintf("%s %04d %08d %s%s %s",
+		#		$sign, $dailySigns, $totalSigns, $self->UTIL_date6ToHost($date), substr($time, 0, 4), $self->{SN});
+	#}
 	printf("  --> %s\n", $data);
 
 	$z = uc(sha1_hex($data));

@@ -33,7 +33,7 @@ sub PROTO_GetSign {
 	my($fh)   = shift @_;
 
 	my($chunk, %reply);
-	$self->debug(  "[EAFDSS::Micrelec]::[Sign]");
+	$self->debug("  [PROTO] Get Sign");
 	do {
 		%reply = $self->SendRequest(0x21, 0x00, "{/0");
 		if ($reply{DATA} =~ /^0E/) {
@@ -60,7 +60,7 @@ sub PROTO_SetHeader {
 	my($self)    = shift @_;
 	my($headers) = shift @_;
 
-	$self->debug("Set Headers");
+	$self->debug("  [PROTO] Set Headers");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "H/$headers");
 
 	if (%reply) {
@@ -74,7 +74,7 @@ sub PROTO_SetHeader {
 sub PROTO_GetStatus {
 	my($self) = shift @_;
 
-	$self->debug("Get Status");
+	$self->debug("  [PROTO] Get Status");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "?");
 
 	if (%reply) {
@@ -88,7 +88,7 @@ sub PROTO_GetStatus {
 sub PROTO_GetHeader {
 	my($self) = shift @_;
 
-	$self->debug(  "Get Headers");
+	$self->debug("  [PROTO] Get Headers");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "h");
 
 	if (%reply) {
@@ -110,7 +110,7 @@ sub PROTO_GetHeader {
 sub PROTO_ReadTime {
 	my($self) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[ReadTime]");
+	$self->debug("  [PROTO] Read Time");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "t");
 
 	if (%reply) {
@@ -135,7 +135,7 @@ sub PROTO_SetTime {
 	my($self) = shift @_;
 	my($time) = shift @_;
 
-	$self->debug("Set Time");
+	$self->debug("  [PROTO] Set Time");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "T/$time");
 
 	if (%reply) {
@@ -148,7 +148,7 @@ sub PROTO_SetTime {
 sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[ReadDeviceID]");
+	$self->debug("  [PROTO] Read Device ID");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "a");
 
 	if (%reply) {
@@ -162,7 +162,7 @@ sub PROTO_ReadDeviceID {
 sub PROTO_VersionInfo {
 	my($self) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug("  [PROTO] Version Info");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "v");
 
 	if (%reply) {
@@ -181,7 +181,7 @@ sub PROTO_DisplayMessage {
 	my($self) = shift @_;
 	my($msg)  = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug("  [PROTO] Display Message");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "7/1/$msg");
 
 	if (%reply) {
@@ -196,7 +196,7 @@ sub PROTO_ReadSignEntry {
 	my($self)  = shift @_;
 	my($index) = shift @_;
 
-	$self->debug(  "[EAFDSS::Micrelec]::[VersionInfo]");
+	$self->debug("  [PROTO] Read Sign Entry");
 	my(%reply) = $self->SendRequest(0x21, 0x00, "\$/$index");
 
 	if (%reply) {
@@ -212,7 +212,7 @@ sub PROTO_ReadClosure {
 	my($index) = shift @_;
 	my(%reply, $replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
 
-	$self->debug(  "[EAFDSS::Micrelec]::[ReadClosure]");
+	$self->debug("  [PROTO] Read Closure");
 	do {
 		%reply = $self->SendRequest(0x21, 0x00, "R/$index");
 		if (%reply) {
@@ -225,14 +225,14 @@ sub PROTO_ReadClosure {
 		}
 	} until ($replyCode !~ /^0E$/);
 
-	return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure);
+	return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $z, $sn, $closure);
 }
 
 sub PROTO_ReadSummary {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 
-	$self->debug(  "[EAFDSS::Micrelec]::[ReadSummary]");
+	$self->debug("  [PROTO] Read Summary");
 	do {
 		my(%reply) = $self->SendRequest(0x21, 0x00, "Z");
 		if (%reply) {
@@ -252,7 +252,7 @@ sub PROTO_IssueReport {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2);
 
-	$self->debug(  "[EAFDSS::Micrelec]::[IssueReport]");
+	$self->debug("  [PROTO] Issue Report");
 	%reply = $self->SendRequest(0x21, 0x00, "x/2/0");
 
 	if (%reply) {

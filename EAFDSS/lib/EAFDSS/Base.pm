@@ -370,7 +370,7 @@ sub _validateFilesC {
                         $self->debug(  "          Keeping file C    [%s] -- Index [%d]", $curFileC, $curClosure);
                 } else {
                         my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure) = $self->PROTO_ReadClosure($curClosure);
-                        my($fnC) = sprintf("%s%s%s%04d_c.txt", $sn, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $curClosure);
+                        my($fnC) = sprintf("%s%s%s%04d_c.txt", $sn, $date, $time, $curClosure);
                         $self->debug(  "          Recreating file C [%s] -- Index [%d]", $fnC, $curClosure);
 
                         open(FC, ">", $deviceDir . "/" . $fnC) || croak "Error: $!";
