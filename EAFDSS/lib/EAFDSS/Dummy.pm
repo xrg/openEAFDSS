@@ -37,7 +37,7 @@ sub init {
 		print(DUMMY "VERSION    = Dummy EAFDSS\n");
 		print(DUMMY "SERIAL     = $self->{SN}\n");
 		print(DUMMY "MAX_FISCAL = 100\n");
-		print(DUMMY "MAX_SIGNS  = 1000\n");
+		print(DUMMY "MAX_SIGNS  = 2400\n");
 		print(DUMMY "CUR_FISCAL = 1\n");
 		print(DUMMY "CUR_SIGN   = 1\n");
 		print(DUMMY "TOTAL_SIGN = 1\n\n");
@@ -216,7 +216,7 @@ sub PROTO_ReadSummary {
 
 	$maxSigns   = $dummy->{MAIN}->{MAX_SIGNS};
 
-	return (0, $status1, $status2, $lastZ-1, $totalSigns, $dailySigns, 0, $maxSigns - $dailySigns);
+	return (0, 0, 0, $lastZ-1, $totalSigns-1, $dailySigns-1, 0, $maxSigns - $dailySigns + 1);
 }
 
 sub PROTO_IssueReport {
@@ -238,18 +238,8 @@ sub PROTO_IssueReport {
 
 	$data = "";
 	for ($i=1; $i < $dummy->{MAIN}->{CUR_SIGN}; $i++) {
-		print "  S > " . $dummy->{SIGNS}->{$i} . "\n";
 		$data .= $dummy->{SIGNS}->{$i};
 	}
-	#for ($i=1; $i < $dummy->{MAIN}->{CUR_FISCAL} - 1; $i++) {
-		#print "  F > " . $dummy->{FISCAL}->{$i} . "\n";
-		#$data .= $dummy->{FISCAL}->{$i};
-		#$data .= sprintf("%s%08d%04d", $self->{SN}, $totalSigns, $dailySigns);
-		#$data .= sprintf("%s%08d%04d%s%s", $self->{SN}, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time));
-		#my($fullSign) = sprintf("%s %04d %08d %s%s %s",
-		#		$sign, $dailySigns, $totalSigns, $self->UTIL_date6ToHost($date), substr($time, 0, 4), $self->{SN});
-	#}
-	printf("  --> %s\n", $data);
 
 	$z = uc(sha1_hex($data));
 	$dummy->{FISCAL}->{$lastZ} = $z;

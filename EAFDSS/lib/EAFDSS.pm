@@ -21,27 +21,27 @@ sub init {
 	my($self, $config) = @_;
 
 	if (! exists $config->{DRIVER}) {
-		return $self->error("You need to provide the Driver to use");
+		croak "You need to provide the Driver to use";
 	} else {
 		$self->{DRV}    = substr($config->{DRIVER}, 0, rindex($config->{DRIVER}, "::"));
 		$self->{PARAMS} = substr($config->{DRIVER}, rindex($config->{DRIVER}, "::") + 2);
 		if ($self->{PARAMS} eq '') {
-			return $self->error("You need to provide params to the driver!");
+			croak "You need to provide params to the driver!";
 		}
 	}
 
 	if (! exists $config->{DIR}) {
-		return $self->error("You need to provide the DIR to save the singatures!");
+		croak "You need to provide the DIR to save the singatures!";
 	} else {
 		$self->{DIR} = $config->{DIR};
 	}
 
 	if (! -e $self->{DIR}) {
-		return $self->error("The directory to save the singatures does not exist!");
+		croak "The directory to save the singatures does not exist!";
 	}
 
 	if (! exists $config->{SN}) {
-		return $self->error("You need to provide the Serial Number of the device!");
+		croak "You need to provide the Serial Number of the device!";
 	} else {
 		$self->{SN} = $config->{SN};
 	}
