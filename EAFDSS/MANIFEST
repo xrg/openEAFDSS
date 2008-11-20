@@ -4,7 +4,8 @@ MANIFEST
 README
 GPL.txt
 LGPL.txt
-t/EAFDSS-Base.t
+t/EAFDSS.t
 lib/EAFDSS.pm
 lib/EAFDSS/Micrelec.pm
 lib/EAFDSS/SDNP.pm
+lib/EAFDSS/Dummy.pm

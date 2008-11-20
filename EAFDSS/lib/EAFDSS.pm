@@ -63,6 +63,27 @@ sub init {
 	return $fd;
 }
 
+sub available_drivers {
+	my(@drivers, $curDir, $curFile, $curDirEAFDSS);
+
+	foreach $curDir (@INC){
+		$curDirEAFDSS = $curDir . "/EAFDSS";
+		next unless -d $curDirEAFDSS;
+
+		opendir(DIR, $curDirEAFDSS) || carp "opendir $curDirEAFDSS: $!\n";
+		foreach $curFile (readdir(EAFDSS::DIR)){
+			next unless $curFile =~ s/\.pm$//;
+			next if $curFile eq 'Base';
+			next if $curFile eq 'Micrelec';
+			push(@drivers, $curFile);
+		}
+		closedir(DIR);
+	}
+
+	return @drivers;
+}
+
+
 sub DESTROY {
 	my($self) = shift;
 }

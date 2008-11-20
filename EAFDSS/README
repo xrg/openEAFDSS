@@ -18,9 +18,13 @@ DEPENDENCIES
 
 This module requires these other modules and libraries:
 
+* Switch
+* Carp
 * Socket
 * IO::Socket::INET
 * Time::HiRes
+* Digest::SHA1
+* Config::IniHash
 
 COPYRIGHT AND LICENCE
 
