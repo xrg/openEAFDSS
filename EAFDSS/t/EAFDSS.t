@@ -30,6 +30,7 @@ sub createHandle {
 
 my(@drivers) = EAFDSS->available_drivers;
 ok(@drivers,  "Found drivers");
+exit;
 
 my($curDriver);
 foreach $curDriver (@drivers) {

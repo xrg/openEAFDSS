@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2008 Hasiotis Nikos
 #
-# ID: $Id: Base.pm 162 2008-05-08 18:44:54Z hasiotis $
+# ID: $Id$
 
 package EAFDSS;
 
@@ -97,9 +97,52 @@ __END__
 
 EAFDSS - base class for all other classes
 
+=head1 SYNOPSIS
+
+  use EAFDSS; 
+
+  $dh = new EAFDSS(
+  	"DRIVER" => $driver . "::" . $params,
+	"SN"     => $serial,
+	"DIR"    => $sDir,
+	"DEBUG"  => $verbal
+     );
+
+
+  $result = $dh->Status();
+  $result = $dh->Sign($fname);
+  $result = $dh->Info();
+  $result = $dh->SetTime($time);
+  $result = $dh->GetTime();
+  $result = $dh->SetHeaders($headers);
+  $result = $dh->GetHeaders();
+
+
 =head1 DESCRIPTION
 
 Nothing to describe nor to document here. Read EAFDSS::SDNP on how to use the module.
+
+
+=head1 Architecture of an EAFDSS Application
+
+=head1 EAFDSS Class methods
+
+=head1 Methods common to all handles
+
+=head2 Status
+
+=head2 Sign
+
+=head2 Info
+
+=head2 SetTime
+
+=head2 GetTime
+
+=head2 SetHeaders
+
+=head2 GetHeaders
+
 
 =head1 VERSION
 

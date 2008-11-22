@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2008 Hasiotis Nikos
 #
-# ID: $Id: Base.pm 162 2008-05-08 18:44:54Z hasiotis $
+# ID: $Id$
 
 package EAFDSS::Base;
 
