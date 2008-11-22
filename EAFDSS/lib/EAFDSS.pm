@@ -102,7 +102,7 @@ EAFDSS - base class for all other classes
   use EAFDSS; 
 
   $dh = new EAFDSS(
-  	"DRIVER" => $driver . "::" . $params,
+  	"DRIVER" => "$driver::$params",
 	"SN"     => $serial,
 	"DIR"    => $sDir,
 	"DEBUG"  => $verbal
@@ -120,33 +120,70 @@ EAFDSS - base class for all other classes
 
 =head1 DESCRIPTION
 
-Nothing to describe nor to document here. Read EAFDSS::SDNP on how to use the module.
+The EAFDSS module handles the communication with an Electronic Signature Device (EAFDSS).
+It defines a set of methods common to all EAFDSS devices in order to communicate with the
+device but also handle all necessary file housekeeping requirements by Law, like creating
+A, B, C files.
 
+=head1 ARCHITECTURE
 
-=head1 Architecture of an EAFDSS Application
+This module is loosely (and shamelessly I may add) influenced by the architecture of the
+DBI module. There is a layer of a basic API that is common to all EAFDSS device drivers.
+Usually a developer of an EAFDSS application will only need to deal with functions only
+at that level. You have to be in need of something really special to access functions
+that are specific to a certain driver.
 
-=head1 EAFDSS Class methods
+=head1 Methods
 
-=head1 Methods common to all handles
+** INCOMPLETE **
 
-=head2 Status
+=head2 EAFDSS->new("DRIVER" => "$driver::$params", "SN" => $serial, "DIR" => $sDir, "DEBUG" => $verbal);
 
-=head2 Sign
+Returns a newly created $driver object. The DRIVER argument is a compination of a driver and
+it's parameters. For instance it could be one of the following:
 
-=head2 Info
+  EAFDSS::SDNP::127.0.0.1
 
-=head2 SetTime
+or
+ 
+  EAFDSS::Dummy:/tmp/dummy.eafdss
 
-=head2 GetTime
+The SN argument is the Serial number of device we wan't to connect. Each device has it's own unique serial
+number. If the device's SN does not much with the provided then you will get an error.
 
-=head2 SetHeaders
+The DIR argument is the directory were the signature files (A, B and C) will be created. Make sure the 
+directory exist.
 
-=head2 GetHeaders
+The last argument is the DEBUG. Use a true value in order to get additional information. This one is only 
+useful to developers of the module itself.
 
+=head2 $dh->Sign($filename)
+
+That method will provide the contents of the file $filename to the EAFDSS and return it's signature.
+
+=head2 $dh->Info
+
+Get info about the device
+
+=head2 $dh->SetTime
+
+Set the time on the device
+
+=head2 $dh->GetTime
+
+Get the time of the device
+
+=head2 $dh->SetHeaders
+
+Set the headers
+
+=head2 $dh->GetHeaders
+
+Get the headers
 
 =head1 VERSION
 
-This is version 0.10.
+This is version 0.10. Which actually is the first release and an unstable release. Only for beta testers!
 
 =head1 AUTHOR
 
