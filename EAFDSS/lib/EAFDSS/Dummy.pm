@@ -350,11 +350,11 @@ sub UTIL_time6toHost {
 1;
 =head1 NAME
 
-EAFDSS::Micrelec - base class for all other Micrelec classes
+EAFDSS::Base - base class for all other Device classes
 
 =head1 DESCRIPTION
 
-Nothing to describe nor to document here. Read EAFDSS::SDNP on how to use the module.
+Read EAFDSS on how to use the module.
 
 =head1 VERSION
 

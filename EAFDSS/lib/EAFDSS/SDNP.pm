@@ -5,7 +5,6 @@
 #
 # ID: $Id$
 
-
 package EAFDSS::SDNP;
 
 use 5.006001;
@@ -369,21 +368,10 @@ __END__
 
 EAFDSS::SDNP - Micrelec Network Electronic Fiscal Signature Devices Library
 
-=head1 SYNOPSIS
-
-  use EAFDSS::SDNP; 
-
-  my($FD) = new EAFDSS::SDNP(
-		DIR   => "/tmp/SIGNS",
-		SN    => "AAA0000001",
-		IP    => "192.168.100.101",
-	);
-  print $FD->Sign("invoice.txt");
 
 =head1 DESCRIPTION
 
-First you initialize your Device Object and then you simply invoke the "Sign" method.
-More  to come soon.
+Read EAFDSS on how to use the module.
 
 =head1 VERSION
 

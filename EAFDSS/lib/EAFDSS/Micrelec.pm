@@ -366,7 +366,7 @@ EAFDSS::Micrelec - base class for all other Micrelec classes
 
 =head1 DESCRIPTION
 
-Nothing to describe nor to document here. Read EAFDSS::SDNP on how to use the module.
+Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
