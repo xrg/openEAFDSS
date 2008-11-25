@@ -6,6 +6,12 @@ GPL.txt
 LGPL.txt
 t/EAFDSS.t
 lib/EAFDSS.pm
+lib/EAFDSS/Base.pm
 lib/EAFDSS/Micrelec.pm
 lib/EAFDSS/SDNP.pm
 lib/EAFDSS/Dummy.pm
+examples/invoice.txt
+examples/OpenEAFDSS-GUI.pl
+examples/OpenEAFDSS.conf
+examples/OpenEAFDSS.ini
+examples/OpenEAFDSS.pl
