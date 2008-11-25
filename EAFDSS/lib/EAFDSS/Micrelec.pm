@@ -15,6 +15,8 @@ use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
 
+our($VERSION) = '0.11';
+
 sub PROTO_DetailSign {
 	my($self) = shift @_;
 	my($fh)   = shift @_;
@@ -362,7 +364,7 @@ sub UTIL_time6toHost {
 1;
 =head1 NAME
 
-EAFDSS::Micrelec - base class for all other Micrelec classes
+EAFDSS::Micrelec - EAFDSS Base Class Driver for Micrelec drivers (SDNP and SDSP)
 
 =head1 DESCRIPTION
 

@@ -15,7 +15,7 @@ use Data::Dumper;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.10';
+our($VERSION) = '0.11';
 
 sub init {
 	my($self, $config) = @_;
@@ -95,7 +95,7 @@ __END__
 
 =head1 NAME
 
-EAFDSS - base class for all other classes
+EAFDSS - Electronic Fiscal Signature Devices Library
 
 =head1 SYNOPSIS
 

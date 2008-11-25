@@ -8,6 +8,7 @@ WriteMakefile(
 		"Switch",
 		"Carp",
 		"Socket",
+		"Class::Base",
 		"IO::Socket::INET",
 		"Time::HiRes",
 		"Digest::SHA1",

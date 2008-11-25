@@ -18,6 +18,8 @@ use Data::Dumper;
 
 use base qw (EAFDSS::Micrelec );
 
+our($VERSION) = '0.11';
+
 sub init {
 	my($class)  = shift @_;
 	my($config) = @_;
@@ -366,7 +368,7 @@ __END__
 
 =head1 NAME
 
-EAFDSS::SDNP - Micrelec Network Electronic Fiscal Signature Devices Library
+EAFDSS::SDNP - EAFDSS Driver for Micrelec SDNP Devices
 
 
 =head1 DESCRIPTION

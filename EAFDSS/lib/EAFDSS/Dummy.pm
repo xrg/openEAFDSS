@@ -18,6 +18,8 @@ use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
 
+our($VERSION) = '0.11';
+
 sub init {
 	my($class)  = shift @_;
 	my($config) = @_;
@@ -350,7 +352,7 @@ sub UTIL_time6toHost {
 1;
 =head1 NAME
 
-EAFDSS::Base - base class for all other Device classes
+EAFDSS::Dummy - EAFDSS Driver for a Dummy filesystem based device 
 
 =head1 DESCRIPTION
 

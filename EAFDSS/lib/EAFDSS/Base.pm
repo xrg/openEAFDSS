@@ -15,6 +15,8 @@ use Data::Dumper;
 
 use base qw ( Class::Base );
 
+our($VERSION) = '0.11';
+
 sub init {
 	my($self, $config) = @_;
 
@@ -412,7 +414,7 @@ __END__
 
 =head1 NAME
 
-EAFDSS::Base - base class for all other classes
+EAFDSS::Base - EAFDSS Base Class Driver for all other drivers
 
 =head1 DESCRIPTION
 
