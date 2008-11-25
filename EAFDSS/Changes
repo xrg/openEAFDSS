@@ -1,5 +1,11 @@
 Revision history for Perl extension EAFDSS.
 
-0.10  Sat Apr 12 15:05:03 2008
-	- Original version 
+Version 0.11	25/11/2008 - Fixed small distribution errors
+
+  + Fixing basic errors
+
+
+Version 0.10	22/11/2008 - First version
+
+  + First Version, Getting familiar with PAUSE, CPAN etc.
 
