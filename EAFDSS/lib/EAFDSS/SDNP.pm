@@ -11,6 +11,7 @@ use 5.006001;
 use strict;
 use warnings;
 use Carp;
+use Class::Base;
 use Socket;
 use Time::HiRes qw ( setitimer ITIMER_REAL time );
 use IO::Socket::INET;

@@ -11,6 +11,7 @@ use 5.006001;
 use strict;
 use warnings;
 use Carp;
+use Class::Base;
 use Switch;
 use Digest::SHA1  qw(sha1_hex);
 use Config::IniHash;

@@ -28,7 +28,7 @@ use Getopt::Std;
 use Data::Dumper; 
 use Config::General qw(ParseConfig);
 
-my(%progie) = ( name      => 'OpenEAFDSS-Util.pl',
+my(%progie) = ( name      => 'OpenEAFDSS.pl',
                 author    => 'Nikos Hasiotis (hasiotis@gmail.com)',
                 copyright => 'Copyright (c) 2008 Hasiotis Nikos, all rights reserved',
                 version   => '0.10');
@@ -208,18 +208,21 @@ sub init_progie() {
 
         if ($opt{e}) {$cmd    = $opt{e}}  else {$valid = "FALSE"};
 
+        if ($valid =~ /FALSE/) {
+		print_help();
+	}
+
         if ($opt{d}) {$driver = $opt{d}};
         if ($opt{s}) {$serial = $opt{s}};
         if ($opt{p}) {$params = $opt{p}};
         if ($opt{i}) {$sDir   = $opt{i}};
 
-	if (! defined $driver) { printf("No driver defined\n");        exit(0)}; 
-	if (! defined $params) { printf("No driver params defined\n"); exit(0)}; 
-	if (! defined $sDir)   { printf("No signs dir defined\n");     exit(0)}; 
-	if (! defined $serial) { printf("No serial defined\n");        exit(0)}; 
+	if ( (! defined $driver) && ($valid =~ /TRUE/) ) { printf("No driver defined\n");        exit(0)}; 
+	if ( (! defined $params) && ($valid =~ /TRUE/) ) { printf("No driver params defined\n"); exit(0)}; 
+	if ( (! defined $sDir)   && ($valid =~ /TRUE/) ) { printf("No signs dir defined\n");     exit(0)}; 
+	if ( (! defined $serial) && ($valid =~ /TRUE/) ) { printf("No serial defined\n");        exit(0)}; 
 
         if ($valid =~ /FALSE/) {
-		print_help();
                 exit(0);
         } else {
                 return($debug, $driver, $params, $serial, $sDir, $cmd);
@@ -232,7 +235,7 @@ sub print_help() {
 	printf("\t  -h                                (this help screen)              \n");
 	printf("\t  -v                                (enable debug information)      \n\n");
 	printf("\t  -c CONFIG_FILENAME                (which config file to use       \n");
-	printf("\t                                     default: OpenEAFDSS-Util.conf) \n\n");
+	printf("\t                                     default: OpenEAFDSS.conf) \n\n");
 	printf("\t  -n DEVICE_NAME                    (device name on config file)    \n");
 	printf("\t  -d DRIVER_NAME                    (driver to use)                 \n");
 	printf("\t  -s SERIAL_NUMBER                  (device serial number)          \n");
