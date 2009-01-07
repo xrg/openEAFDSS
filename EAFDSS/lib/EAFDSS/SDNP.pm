@@ -10,6 +10,8 @@ package EAFDSS::SDNP;
 use 5.006001;
 use strict;
 use warnings;
+use POSIX;
+
 use Carp;
 use Class::Base;
 use Socket;
@@ -36,7 +38,7 @@ sub init {
 	}
 
 	$self->debug("  Socket Initialization to IP/hostname [%s]", $self->{IP});
-	$self->{_SOCKET} = new IO::Socket::INET->new(PeerPort => $self->{PORT}, Proto => 'udp', PeerAddr => $self->{IP});
+	$self->{_SOCKET} = IO::Socket::INET->new(PeerPort => $self->{PORT}, Proto => 'udp', PeerAddr => $self->{IP});
 	if (! defined $self->{_SOCKET}) {
 		return undef;
 	}
@@ -52,6 +54,12 @@ sub init {
 	$self->debug("  Setting frame counter to 1");
 	$self->{_FSN}   = 1;
 
+
+	my($reply, $deviceID) = $self->PROTO_ReadDeviceID();
+	if ( ($reply == 0) && ($deviceID ne $self->{SN}) ) {
+		return $self->error("Serial Number not matching");
+	}
+
 	return $self;
 }
 
@@ -65,7 +73,7 @@ sub SendRequest {
 
 	# For at least 6 times do:
 	my($try);
-	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= -.100};
+	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= 0.100};
 	setitimer(ITIMER_REAL, 0.100, 0.100);
 	for ($try = 1; $try < 6; $try++) {
 		my(%reply)  = ();
@@ -162,6 +170,89 @@ sub SendRequest {
 }
 
 sub _sdnpQuery {
+	my($self)  = shift @_;
+	my($devices);
+
+	$self->_sdnpSendQuery();
+
+	local $SIG{ALRM} = sub { $self->{_T0} -= 0.100; $self->{_T1} -= 0.100};
+	setitimer(ITIMER_REAL, 0.100, 0.100);
+
+	# Set timer T0 to 500 milliseconds;
+	$self->{_T0} = 1.000;
+	$self->{_T1} = 0.500;
+		
+	# Do until T0 expires:
+	while ($self->{_T0} > 0) {
+		my(%reply)  = ();
+		my($frame)  = undef;
+
+		my($query_socket) = IO::Socket::INET->new(
+			LocalPort => $self->{PORT} + 1,
+			Proto => 'udp',
+		);
+
+		if (! defined $query_socket) {
+			return undef;
+		}
+
+		$query_socket->recv($frame, 512);
+		if ($frame) {
+			%reply = $self->_sdnpAnalyzeFrame($frame);
+			$self->_sdnpPrintFrame("        <---- [%s]", $frame);
+			$reply{'HOST'} = $query_socket->peerhost();
+
+			# If a valid frame received then:
+			if ($self->_sdnpQueryFrameCheck(\%reply)) {
+				#If frame type is ACTIVE then:
+				if ($reply{OPCODE} == 0x01) {
+					#If ACTIVE(FSN) = QUERY(FSN) then:
+					if ($self->{_FSN} == $reply{SN}) {
+						#Add IP address of sender to device list;
+						$self->debug("        Found host on IP %s", $reply{'HOST'});
+						$devices->{$reply{'HOST'}} = 1;
+					}
+				}
+			}
+		}
+		close($query_socket);
+
+		if ($self->{_T1} < 0) {
+			$self->_sdnpSendQuery();
+			$self->{_T1} = 0.500;
+		}
+	}
+
+	$self->{_TIMER} = 0;
+	setitimer(ITIMER_REAL, 0, 0);
+
+	return (0, $devices);
+}
+
+sub _sdnpSendQuery {
+	my($self)  = shift @_;
+
+	$self->{_SOCKET} = IO::Socket::INET->new(
+		LocalPort => $self->{PORT} + 1,
+		PeerAddr => inet_ntoa(INADDR_BROADCAST),
+		PeerPort => $self->{PORT},
+		Proto => 'udp',
+		Type => SOCK_DGRAM,
+		Broadcast => 1,
+	);
+
+	if (! defined $self->{_SOCKET}) {
+		return undef;
+	}
+
+	$self->{_FSN} = int(rand(32768) + 1);
+
+	$self->debug(  "      Send Query Request" );
+	my($msg) = $self->_sdnpPacket(0x00, 0x00);
+	$self->_sdnpPrintFrame("        ----> [%s]", $msg);
+	$self->{_SOCKET}->send($msg);
+	
+	close($self->{_SOCKET});
 }
 
 sub _sdnpSync {
@@ -235,6 +326,48 @@ sub _sdnpSync {
 	return 0;
 }
 
+sub _sdnpQueryFrameCheck {
+	my($self)   = shift @_;
+	my($frame)  = shift @_;
+
+	$self->debug(  "    Checking Query Frame");
+
+	# Check if size of UDP frame < size of SDNP header then: 
+	$self->debug(  "        Checking frame size [%d]", length($frame->{RAW}));
+	if (length($frame->{RAW}) < 12) {
+		return 0;
+	}
+
+	# Check if size of UDP frame > 512 then:
+	if (length($frame) > 512) {
+		return 0;
+	}
+
+	# Check if SDNP header checksum does not validate okay then:
+	my($i, $checksum) = (0, 0xAA55);
+	for ($i=0; $i < 10 ; $i++) {
+		$checksum += ord substr($frame->{RAW}, $i, 1);
+	}
+	$self->debug(  "        Checking frame header checksum [%04X]", $checksum);
+	if ($checksum != $frame->{HEADER_CHECKSUM}) {
+		return 0;
+	}
+
+	# Check if UDP frame size <> SDNP header data length +  SDNP header size then:
+	$self->debug(  "        Checking UDP frame size [%d]", length($frame->{RAW}));
+	if (length($frame->{RAW}) != 12 + $frame->{LENGTH}) {
+		return 0;
+	}
+
+	# Check if frame id in SDNP header <> SDNP device protocol id then:
+	$self->debug(  "        Checking frame id [%04X]", $frame->{ID});
+	if ($frame->{ID} != 0x7A2D) {
+		return 0;
+	}
+
+	# Return success;
+	return 1;
+}
 
 sub _sdnpFrameCheck {
 	my($self)   = shift @_;
@@ -244,7 +377,6 @@ sub _sdnpFrameCheck {
 
 	# Check sender ip
 	my($ip) = inet_ntoa(inet_aton($self->{IP})); 
-	#my($ip) = inet_ntoa(inet_aton("gattaca")); 
 	$self->debug(  "        Comparing [%s][%s]", $frame->{HOST}, $ip);
 	if ($frame->{HOST} ne $ip) {
 		return 0;

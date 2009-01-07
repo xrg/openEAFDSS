@@ -22,7 +22,7 @@ sub init {
 	my($self, $config) = @_;
 
 	if (! exists $config->{DIR}) {
-		return $self->error("You need to provide the DIR to save the singatures!");
+		return $self->error("You need to provide the DIR to save the signnatures!");
 	} else {
 		$self->{DIR} = $config->{DIR};
 	}
@@ -143,6 +143,22 @@ sub Info {
 	my($reply, $version) = $self->PROTO_VersionInfo();
 	if ($reply == 0) {
         	return $version;
+	} else {
+		return $self->error($reply);
+	}
+}
+
+sub Query {
+        my($self) = shift @_;
+
+        $self->debug("Query for devices");
+	my($reply, $devices) = $self->PROTO_Query();
+	if ($reply == 0) {
+		if ($devices) {
+        		return $devices;
+		} else {
+			return $self->error(64+0x05);
+		}
 	} else {
 		return $self->error($reply);
 	}

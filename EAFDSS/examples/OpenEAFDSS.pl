@@ -22,6 +22,7 @@
 # ID: $Id$
 
 use strict;
+use lib "../lib";
 use Switch;
 use EAFDSS; 
 use Getopt::Std;
@@ -31,7 +32,7 @@ use Config::General qw(ParseConfig);
 my(%progie) = ( name      => 'OpenEAFDSS.pl',
                 author    => 'Nikos Hasiotis (hasiotis@gmail.com)',
                 copyright => 'Copyright (c) 2008 Hasiotis Nikos, all rights reserved',
-                version   => '0.10');
+                version   => '0.11');
 
 sub main() {
         my($verbal, $driver, $params, $serial, $sDir, $cmd) = init_progie();
@@ -56,6 +57,7 @@ sub main() {
 		case "STATUS"  { cmdStatus($dh)             }
 		case "INFO"    { cmdInfo($dh)               }
 		case "TIME"    { cmdTime($dh, $cmdParam)    }
+		case "QUERY"   { cmdQuery($dh)              }
 		case "HEADERS" { cmdHeaders($dh, $cmdParam) }
 	}
 }
@@ -151,6 +153,24 @@ sub cmdTime() {
 
 }
 
+sub cmdQuery() {
+	my($dh) = shift @_;
+
+	my($devices) = $dh->Query();
+	my($errNo)  = $dh->error();
+	if ($devices) {
+		while ( my($key, $value) = each %$devices) {
+			printf("%s\n", $key);
+		}
+		exit(0);
+	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
+}
+
 sub cmdHeaders() {
 	my($dh)      = shift @_;
 	my($headers) = shift @_;
@@ -191,7 +211,7 @@ sub init_progie() {
         my(%opt, $valid, $cfg, $name, $cmd, $debug, $driver, $serial, $params, $sDir);
         getopts('hvn:d:s:p:i:e:c:', \%opt);
 
-        if ($opt{c}) {$cfg    = $opt{i}}  else {$cfg = "OpenEAFDSS.conf"}
+        if ($opt{c}) {$cfg    = $opt{c}}  else {$cfg = "OpenEAFDSS.conf"}
 	my(%cfg) = ParseConfig(-ConfigFile => $cfg, -LowerCaseNames => 1);
 
         if ($opt{h}) {$valid  = "FALSE"}  else {$valid = "TRUE"};
@@ -247,6 +267,7 @@ sub print_help() {
 	printf("\t                                         - STATUS                   \n");
 	printf("\t                                         - REPORT                   \n");
 	printf("\t                                         - INFO                     \n");
+	printf("\t                                         - QUERY                    \n");
 	printf("\t                                         - HEADERS [headers])       \n");
 	printf("\n  Example 1: $progie{name} -d EAFDSS::SDNP -p hostname -e \"SIGN invoice.txt\"\n");
 	printf("\n             This command will sign the file invoice.txt printing the signature");

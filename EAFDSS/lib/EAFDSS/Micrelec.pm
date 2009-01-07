@@ -32,6 +32,19 @@ sub PROTO_DetailSign {
 	}
 }
 
+sub PROTO_Query{
+	my($self) = shift @_;
+
+	$self->debug("  [PROTO] Query ");
+	my($replyCode, $devices) = $self->_sdnpQuery();
+
+	if (! $replyCode) {
+		return ($replyCode, $devices);
+	} else {
+		return ($self->error());
+	}
+}
+
 sub PROTO_GetSign {
 	my($self) = shift @_;
 	my($fh)   = shift @_;
@@ -149,6 +162,7 @@ sub PROTO_SetTime {
 		return ($self->error());
 	}
 }
+
 sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
 
@@ -315,6 +329,8 @@ sub errMessage {
 		case 64+0x01	 { return "Device not accessible"}
 		case 64+0x02	 { return "No such file"}
 		case 64+0x03	 { return "Device Sync Failed"}
+		case 64+0x04	 { return "Bad Serial Number"}
+		case 64+0x05	 { return "Query found no devices"}
 
 		else		 { return undef}
 	}
