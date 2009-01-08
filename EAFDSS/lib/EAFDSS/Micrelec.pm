@@ -331,6 +331,7 @@ sub errMessage {
 		case 64+0x03	 { return "Device Sync Failed"}
 		case 64+0x04	 { return "Bad Serial Number"}
 		case 64+0x05	 { return "Query found no devices"}
+		case 64+0x10	 { return "File contains invalid characters"}
 
 		else		 { return undef}
 	}

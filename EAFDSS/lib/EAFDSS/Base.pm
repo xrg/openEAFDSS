@@ -49,6 +49,16 @@ sub Sign {
 			return $self->error($replySignDir);
 		}
 
+                $self->debug(  "  Checking file [%s]", $fname);
+                open(FH, $fname);
+		my($invalid) = $self->_checkCharacters(*FH);
+                close(FH);
+
+                if ($invalid)  {
+			$self->debug("  File contains invalid characters [%s]", $fname);
+			return $self->error(64+0x10);
+		}
+
                 $self->debug(  "  Signing file [%s]", $fname);
                 open(FH, $fname);
                 ($reply, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign) = $self->PROTO_GetSign(*FH);
@@ -70,6 +80,21 @@ sub Sign {
 		return $self->error(64+2);
         }
 
+}
+
+sub _checkCharacters {
+        my($self) = shift @_;
+	my($fh)   = shift @_;
+	
+	my($c);
+	while (read($fh, $c, 1)) {
+		if (grep $_ == ord($c), qw/0 1 2 3 4 5 6 7 8 11 14 15 16 17 18 19 20 21 22 23 24 25 27 28 29 30 31 127 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 173 210 255/ ) {
+                	$self->debug("  Found invalid character [%d]", ord($c));
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 sub Status {
