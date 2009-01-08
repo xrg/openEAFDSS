@@ -1,5 +1,10 @@
 Revision history for Perl extension EAFDSS.
 
+Version 0.12	08/01/2009 - Added Functionality
+
+  + Support for the query function
+  + Now detects invalid characters in a file before attempting to sing them
+
 Version 0.11	25/11/2008 - Fixed small distribution errors
 
   + Fixing basic errors

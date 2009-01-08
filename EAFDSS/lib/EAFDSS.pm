@@ -16,7 +16,7 @@ use Data::Dumper;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.11';
+our($VERSION) = '0.12';
 
 sub init {
 	my($self, $config) = @_;
@@ -184,7 +184,7 @@ Get the headers
 
 =head1 VERSION
 
-This is version 0.10. Which actually is the first release and an unstable release. Only for beta testers!
+This is version 0.12. Which actually is the first release and an unstable release. Only for beta testers!
 
 =head1 AUTHOR
 
