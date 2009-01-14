@@ -73,11 +73,16 @@ sub SendRequest {
 
 	my($try, $state);
 	$self->{_SERIAL}->read_const_time(3000);
+	$self->{_SERIAL}->read_char_time(0);
+	$state = "ENQ";
 	for ($try = 1; $try <= 3; $try++) {
 		my($count_out);
 		$self->debug("    Sending ENQ [try %d]", $try);
 		$count_out = $self->{_SERIAL}->write($control->{'CAN'});
+		$count_out = $self->{_SERIAL}->write($control->{'CAN'});
+		$count_out = $self->{_SERIAL}->write($control->{'CAN'});
 		$count_out = $self->{_SERIAL}->write($control->{'ENQ'});
+		$self->{_SERIAL}->write_drain();
 		if ($count_out) {
 			my($count_in, $ack) = $self->{_SERIAL}->read(1);
 			if ($count_in && ($ack eq $control->{'ACK'} ) ) {
@@ -88,15 +93,18 @@ sub SendRequest {
 		}
 	}
 	if ($state ne "PACKET") {
-		return -1;
+		$reply{DATA}   = "02/0/";
+		return %reply;
 	}
 
-	my($packet) = sprintf("%s%s/%d%s", $control->{'STX'}, $data, $self->_checksum($data . "/"), $control->{'ETX'}); 
-	$self->debug("    Build packet [%s]", $packet);
+	my($packet) = sprintf("%s%s/%02d%s", $control->{'STX'}, $data, $self->_checksum($data . "/"), $control->{'ETX'}); 
+	my($ppacket) = sprintf("%s.../%02d", substr($data, 0, 10), $self->_checksum($data . "/")); 
+	$self->debug("    Build packet for data[%s]", $ppacket);
 	for ($try = 1; $try <= 3; $try++) {
 		my($count_out);
 		$self->debug("    Sending PACKET [try %d]", $try);
 		$count_out = $self->{_SERIAL}->write($packet);
+		$self->{_SERIAL}->write_drain();
 		if ($count_out == length($packet) ) {
 			my($count_in, $ack) = $self->{_SERIAL}->read(1);
 			if ($count_in && ($ack eq $control->{'ACK'} ) ) {
@@ -105,12 +113,14 @@ sub SendRequest {
 				last;
 			}
 			if ($count_in && ($ack eq $control->{'NAK'} ) ) {
+				$reply{OPCODE} = 0x13;
 				$self->debug("      Got NAK to PACKET send");
 			}
 		}
 	}
 	if ($state ne "REPLY") {
-		return -1;
+		$reply{DATA}   = "02/0/";
+		return %reply;
 	}
 
 	my($full_reply, $reply, $checksum);
@@ -140,10 +150,11 @@ sub SendRequest {
 		}
 	}
 	if ($state ne "DONE") {
-		return -1;
+		$reply{DATA}   = "02/0/";
+		return %reply;
 	}
 
-	$reply{DATA} = $reply;	
+	$reply{DATA}   = $reply;	
 	return %reply;
 }
 
@@ -154,9 +165,11 @@ sub _checksum {
 	$data = $data;
 	my($i, $checksum) = (0, 0);
 	for ($i=0; $i < length($data); $i++) {
-		$checksum += ord substr($data, $i, 1);
+		if (ord substr($data, $i, 1) != 10) {
+			$checksum += ord substr($data, $i, 1);
+		}
 		$checksum = $checksum % 256;
-		printf("[%s %3d :: %4d :: %3d]\n",  substr($data, $i, 1), ord substr($data, $i, 1), $checksum, $checksum % 100);
+		#printf("[%s %3d :: %4d :: %3d]\n",  substr($data, $i, 1), ord substr($data, $i, 1), $checksum, $checksum % 100);
 	}
 
 	return $checksum % 100;

@@ -58,6 +58,9 @@ sub PROTO_GetSign {
 		}
 	} until ($reply{DATA} !~ /^0E/);
 
+	if (! exists $reply{OPCODE}) {
+		$reply{OPCODE} = 0x22;
+	}
 	if ( %reply && ($reply{OPCODE} == 0x22) ) {
 		while (read($fh, $chunk, 400)) {
 			my(%reply) = $self->SendRequest(0x21, 0x00, "@/$chunk");
