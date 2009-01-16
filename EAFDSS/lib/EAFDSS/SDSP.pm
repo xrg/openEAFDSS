@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2008 Hasiotis Nikos
 #
-# ID: $Id: SDNP.pm 51 2009-01-08 09:17:46Z hasiotis $
+# ID: $Id$
 
 package EAFDSS::SDSP;
 
@@ -19,7 +19,7 @@ use Data::Dumper;
 
 use base qw (EAFDSS::Micrelec );
 
-our($VERSION) = '0.12';
+our($VERSION) = '0.13';
 
 my($control) = {
 		'ACK' => chr(0x06),
@@ -191,7 +191,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.12.
+This is version 0.13.
 
 =head1 AUTHOR
 

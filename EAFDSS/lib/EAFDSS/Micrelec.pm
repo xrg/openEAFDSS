@@ -17,7 +17,7 @@ use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
 
-our($VERSION) = '0.12';
+our($VERSION) = '0.13';
 
 sub PROTO_DetailSign {
 	my($self) = shift @_;
@@ -394,7 +394,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.12.
+This is version 0.13.
 
 =head1 AUTHOR
 
