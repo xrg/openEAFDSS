@@ -17,7 +17,7 @@ use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
 
-our($VERSION) = '0.13';
+our($VERSION) = '0.20';
 
 sub PROTO_DetailSign {
 	my($self) = shift @_;
@@ -81,7 +81,7 @@ sub PROTO_SetHeader {
 	my($headers) = shift @_;
 
 	$self->debug("  [PROTO] Set Headers");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "H/$headers");
+	my(%reply) = $self->SendRequest(0x21, 0x00, "H/$headers/");
 
 	if (%reply) {
 		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
@@ -156,7 +156,9 @@ sub PROTO_SetTime {
 	my($time) = shift @_;
 
 	$self->debug("  [PROTO] Set Time");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "T/$time");
+        my($pdate) = substr($time, 0, 2) . substr($time, 3, 2) . substr($time, 6, 2);
+        my($ptime) = substr($time, 9, 2) . substr($time, 12, 2) . substr($time, 15, 2);
+	my(%reply) = $self->SendRequest(0x21, 0x00, "T/$pdate/$ptime/");
 
 	if (%reply) {
 		my($replyCode, $status1, $status2) = split(/\//, $reply{DATA});
@@ -394,7 +396,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.13.
+This is version 0.20.
 
 =head1 AUTHOR
 

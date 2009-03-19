@@ -16,7 +16,7 @@ use Data::Dumper;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.13';
+our($VERSION) = '0.20';
 
 sub init {
 	my($self, $config) = @_;
@@ -50,7 +50,7 @@ sub init {
 	$self->debug("Loading driver \"$self->{DRV}\"\n");
 	eval qq { require $self->{DRV} };
 	if ($@) {
-		return $self->error('No such driver!');
+		return $self->error("No such driver \"$self->{DRV}\"");
 	}
 
 	$self->debug("Initializing device with \"$self->{PARAMS}\"\n");
@@ -102,13 +102,17 @@ EAFDSS - Electronic Fiscal Signature Devices Library
 
   use EAFDSS; 
 
-  $dh = new EAFDSS(
-  	"DRIVER" => "$driver::$params",
-	"SN"     => $serial,
-	"DIR"    => $sDir,
-	"DEBUG"  => $verbal
-     );
+  my($dh) = new EAFDSS(
+                  "DRIVER" => $driver . "::" . $params,
+                  "SN"     => $serial,
+                  "DIR"    => $sDir,
+                  "DEBUG"  => $verbal
+          );
 
+  if (! $dh) {
+          print("ERROR: " . EAFDSS->error() ."\n");
+          exit -1;
+  }
 
   $result = $dh->Status();
   $result = $dh->Sign($fname);
@@ -118,6 +122,16 @@ EAFDSS - Electronic Fiscal Signature Devices Library
   $result = $dh->SetHeaders($headers);
   $result = $dh->GetHeaders();
 
+  if ($result) {
+          printf("%s\n", $result);
+          exit(0);
+  } else {
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
+
 
 =head1 DESCRIPTION
 
@@ -126,21 +140,35 @@ It defines a set of methods common to all EAFDSS devices in order to communicate
 device but also handle all necessary file housekeeping requirements by Law, like creating
 A, B, C files.
 
-=head1 ARCHITECTURE
+=head1 ARCHITECTURE of an EAFDSS Application
 
 This module is loosely (and shamelessly I may add) influenced by the architecture of the
 DBI module. There is a layer of a basic API that is common to all EAFDSS device drivers.
 Usually a developer of an EAFDSS application will only need to deal with functions only
 at that level. You have to be in need of something really special to access functions
 that are specific to a certain driver.
+ 
+
+         |<-------- EAFDSS A/B type solution ------->|
+         |<- Your work ->| |<--- Scope of EAFDSS --->| |<-- hardware -->|
+                                .-.   .-------------.   .---------------.
+         .--------------.       | |---| SDSP Driver |---| EAFDSS Device |
+         |              |       |E|   `-------------'   `---------------'
+         | Perl script  |  |A|  |A|   .-------------.   .---------------.
+         | using EAFDSS |--|P|--|F|---| SDNP Driver |---| EAFDSS Device |
+         | API methods  |  |I|  |D|   `-------------'   `---------------'
+         |              |       |S|...
+         `--------------'       |S|... Other drivers
+                                | |...
+                                `-'
 
 =head1 Methods
 
-** INCOMPLETE **
+First of all you have to initialize the driver handle through the EAFDSS constructor.
 
-=head2 EAFDSS->new("DRIVER" => "$driver::$params", "SN" => $serial, "DIR" => $sDir, "DEBUG" => $verbal);
+=head2 new
 
-Returns a newly created $driver object. The DRIVER argument is a compination of a driver and
+Returns a newly created $dh driver handle. The DRIVER argument is a compination of a driver and
 it's parameters. For instance it could be one of the following:
 
   EAFDSS::SDNP::127.0.0.1
@@ -148,6 +176,10 @@ it's parameters. For instance it could be one of the following:
 or
  
   EAFDSS::Dummy:/tmp/dummy.eafdss
+
+or
+
+  Driver EAFDSS::SDSP::/dev/ttyS0
 
 The SN argument is the Serial number of device we wan't to connect. Each device has it's own unique serial
 number. If the device's SN does not much with the provided then you will get an error.
@@ -158,33 +190,180 @@ directory exist.
 The last argument is the DEBUG. Use a true value in order to get additional information. This one is only 
 useful to developers of the module itself.
 
+  my($dh) = new EAFDSS(
+                  "DRIVER" => $driver . "::" . $params,
+                  "SN"     => $serial,
+                  "DIR"    => $sDir,
+                  "DEBUG"  => $verbal
+          );
+          
+  if (! $dh) {
+          print("ERROR: " . EAFDSS->error() ."\n");
+          exit -1;
+  }
+
+Following are the common methods to all the device drivers.
+
 =head2 $dh->Sign($filename)
 
-That method will provide the contents of the file $filename to the EAFDSS and return it's signature.
+This the main method that will be used most of the time in a typical fiscal day. The aim of  that method
+is to feed the contents of the file provided by the $filename parameter to the EAFDSS device and return
+to the user the signature string.
+
+  my($result) = $dh->Sign($fname);
+  if ($result) {
+          printf("%s\n", $result);
+          exit(0);
+  } else {
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
 
 =head2 $dh->Info
 
-Get info about the device
+This method will return information about the name of the device and version of it's firmware.
+
+  my($result) = $dh->Info();
+  if ($result) {
+          printf("%s\n", $result);
+          exit(0);
+  } else {
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
 
 =head2 $dh->SetTime
 
-Set the time on the device
+Use this method to set the date/time on the device. Provide the date/time in the "DD/MM/YY HH:MM:SS" format. 
+
+  my($result) = $dh->SetTime($time);
+  if ( defined $result && ($result == 0)) {
+          printf("Time successfully set\n");
+          exit(0);
+  } else {
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
 
 =head2 $dh->GetTime
 
-Get the time of the device
+This method will return the time of the device in the "DD/MM/YY HH:MM:SS" format
+
+  my($result) = $dh->GetTime();
+  if ($result) {
+          printf("%s\n", $result);
+          exit(0);
+  } else {
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
 
 =head2 $dh->SetHeaders
 
-Set the headers
+Use this method to set the headers on the device. Provide the headers in the following format:
+
+  Style1/Line1/Style2/Line2/Style3/Line3/Style4/Line4/Style5/Line5/Style6/Line6
+
+  my($result) = $dh->SetHeaders($headers);
+  if ( defined $result && ($result == 0)) {
+          printf("Headers successfully set\n");
+          exit(0);
+  } else {
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
 
 =head2 $dh->GetHeaders
 
-Get the headers
+Use this method to get the printing headers of the device. The returned array contains 6 couples of values. One for the 
+type of the printing line, and one for the actual printing message.
+
+  my(@headersArray) = $dh->GetHeaders();
+  if (@headersArray) {
+          my($i);
+          for ($i=0; $i < 12; $i+=2) {
+                  if ($headersArray[$i] ne '') {
+                          printf("[Line %d] [Type:%d] --> %s\n", 
+				$i/2+1, $headersArray[$i], $headersArray[$i+1]);
+                  }
+          }
+          exit(0);
+  } else { 
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
+
+=head1 ERROR Codes
+
+   0x00: No errors - success
+
+   0x01: Wrong number of fields
+   0x02: Field too long
+   0x03: Field too small
+   0x04: Field fixed size mismatch
+   0x05: Field range or type check failed
+   0x06: Bad request code
+   0x09: Printing type bad
+   0x0A: Cannot execute with day open
+   0x0B: RTC programming requires jumper
+   0x0C: RTC date or time invalid
+   0x0D: No records in fiscal period
+   0x0E: Device is busy in another task
+   0x0F: No more header records allowed
+   0x10: Cannot execute with block open
+   0x11: Block not open
+   0x12: Bad data stream
+   0x13: Bad signature field
+   0x14: Z closure time limit
+   0x15: Z closure not found
+   0x16: Z closure record bad
+   0x17: User browsing in progress
+   0x18: Signature daily limit reached
+   0x19: Printer paper end detected
+   0x1A: Printer is offline
+   0x1B: Fiscal unit is offline
+   0x1C: Fatal hardware error
+   0x1D: Fiscal unit is full
+   0x1E: No data passed for signature
+   0x1F: Signature does not exist
+   0x20: Battery fault detected
+   0x21: Recovery in progress
+   0x22: Recovery only after CMOS reset
+   0x23: Real-Time Clock needs programming
+   0x24: Z closure date warning
+   0x25: Bad character in stream
+   0x01: Device not accessible
+
+   0x41: Device not accessible
+   0x42: No such file
+   0x43: Device Sync Failed
+   0x44: Bad Serial Number
+   0x45: Query found no devices
+   0x50: File contains invalid characters
+
+=head1 EXAMPLES
+Take a look at the examples directory of the distribution for a complete command line utility (OpenEAFDSS.pl) using the
+library.
+
+=head1 SUPPORT / WARRANTY
+The EAFDSS is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
 
 =head1 VERSION
 
-This is version 0.13. Which actually is the first release and an unstable release. Only for beta testers!
+This is version 0.20. This version has a finalised API and full functionallity but still contains known bugs. NOT TO BE
+USED IN A PRODUCTION ENVIRONMENT.
 
 =head1 AUTHOR
 

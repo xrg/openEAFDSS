@@ -16,7 +16,7 @@ use Data::Dumper;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.13';
+our($VERSION) = '0.20';
 
 sub init {
 	my($self, $config) = @_;
@@ -195,7 +195,7 @@ sub GetHeaders {
         $self->debug("Read Headers operation");
 	my($reply, @headers) = $self->PROTO_GetHeader();
 	if ($reply == 0) {
-		return \@headers;
+		return @headers;
 	} else {
 		return $self->error($reply);
 	}
@@ -464,7 +464,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.13.
+This is version 0.20.
 
 =head1 AUTHOR
 

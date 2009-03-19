@@ -19,7 +19,7 @@ use Data::Dumper;
 
 use base qw (EAFDSS::Micrelec );
 
-our($VERSION) = '0.13';
+our($VERSION) = '0.20';
 
 my($control) = {
 		'ACK' => chr(0x06),
@@ -191,7 +191,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.13.
+This is version 0.20.
 
 =head1 AUTHOR
 

@@ -4,10 +4,12 @@ Version 0.13	16/01/2009 - Bug fix
 
   + Undeclared dependencies on Class::Base bug fix [rt.cpan.org #42460]
 
+
 Version 0.12	08/01/2009 - Added Functionality
 
   + Support for the query function
   + Now detects invalid characters in a file before attempting to sing them
+
 
 Version 0.11	25/11/2008 - Fixed small distribution errors
 
