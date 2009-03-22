@@ -55,9 +55,19 @@ sub init {
 	$self->{_SERIAL}->databits(8);
 	$self->{_SERIAL}->stopbits(1); 
 
+	$self->{_SERIAL}->read_const_time(1);
+
 	my($reply, $deviceID) = $self->PROTO_ReadDeviceID();
 	if ( ($reply == 0) && ($deviceID ne $self->{SN}) ) {
 		return $self->error("Serial Number not matching");
+	}
+	
+	if ( $reply ==0x0E ) {
+		return $self->error("Device is too busy!");
+	}
+
+	if ( $reply != 0 ) {
+		return $self->error("Error initializing device");
 	}
 
 	return $self;
@@ -71,91 +81,110 @@ sub SendRequest {
 
 	my(%reply) = ();
 
-	my($try, $state);
-	$self->{_SERIAL}->read_const_time(3000);
-	$self->{_SERIAL}->read_char_time(0);
-	$state = "ENQ";
-	for ($try = 1; $try <= 3; $try++) {
-		my($count_out);
-		$self->debug("    Sending ENQ [try %d]", $try);
-		$count_out = $self->{_SERIAL}->write($control->{'CAN'});
-		$count_out = $self->{_SERIAL}->write($control->{'CAN'});
-		$count_out = $self->{_SERIAL}->write($control->{'CAN'});
-		$count_out = $self->{_SERIAL}->write($control->{'ENQ'});
-		$self->{_SERIAL}->write_drain();
-		if ($count_out) {
-			my($count_in, $ack) = $self->{_SERIAL}->read(1);
-			if ($count_in && ($ack eq $control->{'ACK'} ) ) {
-				$self->debug("      Got ACK to ENQ");
-				$state = "PACKET";
-				last;
-			}
-		}
-	}
-	if ($state ne "PACKET") {
-		$reply{DATA}   = "02/0/";
-		return %reply;
-	}
+	my($busy_try, $try, $state);
 
-	my($packet) = sprintf("%s%s/%02d%s", $control->{'STX'}, $data, $self->_checksum($data . "/"), $control->{'ETX'}); 
-	my($ppacket) = sprintf("%s.../%02d", substr($data, 0, 10), $self->_checksum($data . "/")); 
-	$self->debug("    Build packet for data[%s]", $ppacket);
-	for ($try = 1; $try <= 3; $try++) {
-		my($count_out);
-		$self->debug("    Sending PACKET [try %d]", $try);
-		$count_out = $self->{_SERIAL}->write($packet);
-		$self->{_SERIAL}->write_drain();
-		if ($count_out == length($packet) ) {
-			my($count_in, $ack) = $self->{_SERIAL}->read(1);
-			if ($count_in && ($ack eq $control->{'ACK'} ) ) {
-				$self->debug("      Got ACK to PACKET send");
-				$state = "REPLY";
-				last;
-			}
-			if ($count_in && ($ack eq $control->{'NAK'} ) ) {
-				$reply{OPCODE} = 0x13;
-				$self->debug("      Got NAK to PACKET send");
-			}
-		}
-	}
-	if ($state ne "REPLY") {
-		$reply{DATA}   = "02/0/";
-		return %reply;
-	}
-
-	my($full_reply, $reply, $checksum);
-	for ($try = 1; $try <= 3; $try++) {
-		$full_reply = "";
-		$self->debug("    Receiving REPLY [try %d]", $try);
-		my($count_in, $ack) = $self->{_SERIAL}->read(1);
-		if ($count_in && ($ack eq $control->{'STX'}) ) {
-			my($count_in, $c);
-			do {
-				($count_in, $c) = $self->{_SERIAL}->read(1);
-				if ($count_in && ($c ne $control->{'ETX'} ) ) {
-					$full_reply .= $c;
+	BUSY: for ($busy_try = 1; $busy_try <= 3; $busy_try++) {
+		$self->{_SERIAL}->read_const_time(3000);
+		$self->{_SERIAL}->read_char_time(0);
+		$state = "ENQ";
+		ENQ: for ($try = 1; $try <= 3; $try++) {
+			my($count_out);
+			$self->debug("    Sending ENQ [try %d]", $try);
+			$count_out = $self->{_SERIAL}->write($control->{'CAN'});
+			$count_out = $self->{_SERIAL}->write($control->{'CAN'});
+			$count_out = $self->{_SERIAL}->write($control->{'CAN'});
+			$count_out = $self->{_SERIAL}->write($control->{'ENQ'});
+			$self->{_SERIAL}->write_drain();
+			if ($count_out) {
+				my($count_in, $ack) = $self->{_SERIAL}->read(1);
+				if ($count_in && ($ack eq $control->{'ACK'} ) ) {
+					$self->debug("      Got ACK to ENQ");
+					$state = "PACKET";
+					last ENQ;
 				}
-			} until ($c eq $control->{'ETX'});
-			$full_reply =~ /(.*)\/(\d\d)$/;
-			($reply, $checksum) =  ($1, $2);
-			if ( $checksum == $self->_checksum($reply . "/")) {
-				$self->debug("      Got Reply [%s]", $reply);
-				$self->{_SERIAL}->write($control->{'ACK'});
-				$state = "DONE";
-				last;
-			} else {
-				$self->{_SERIAL}->write($control->{'NAK'});
-				$self->debug("      Discarding because of bad checksum");
 			}
 		}
-	}
-	if ($state ne "DONE") {
-		$reply{DATA}   = "02/0/";
-		return %reply;
+		if ($state ne "PACKET") {
+			$reply{DATA}   = "02/0/";
+			return %reply;
+		}
+
+		my($packet) = sprintf("%s%s/%02d%s", $control->{'STX'}, $data, $self->_checksum($data . "/"), $control->{'ETX'}); 
+		my($ppacket) = sprintf("%s.../%02d", substr($data, 0, 10), $self->_checksum($data . "/")); 
+		$self->debug("    Build packet for data[%s]", $ppacket);
+		PACKET: for ($try = 1; $try <= 3; $try++) {
+			my($count_out);
+			$self->debug("    Sending PACKET [try %d]", $try);
+			$count_out = $self->{_SERIAL}->write($packet);
+			$self->{_SERIAL}->write_drain();
+			if ($count_out == length($packet) ) {
+				my($count_in, $ack) = $self->{_SERIAL}->read(1);
+				if ($count_in && ($ack eq $control->{'ACK'} ) ) {
+					$self->debug("      Got ACK to PACKET send");
+					$state = "REPLY";
+					last PACKET;
+				}
+				if ($count_in && ($ack eq $control->{'NAK'} ) ) {
+					$reply{OPCODE} = 0x13;
+					$self->debug("      Got NAK to PACKET send");
+				}
+			}
+		}
+		if ($state ne "REPLY") {
+			$reply{DATA}   = "02/0/";
+			return %reply;
+		}
+
+		my($full_reply, $reply, $checksum);
+		REPLY: for ($try = 1; $try <= 3; $try++) {
+			$full_reply = "";
+			$self->debug("    Receiving REPLY [try %d]", $try);
+			my($count_in, $ack) = $self->{_SERIAL}->read(1);
+			if ($count_in && ($ack eq $control->{'STX'}) ) {
+				my($count_in, $c);
+				do {
+					($count_in, $c) = $self->{_SERIAL}->read(1);
+					if ($count_in && ($c ne $control->{'ETX'} ) ) {
+						$full_reply .= $c;
+					}
+				} until ($c eq $control->{'ETX'});
+				$full_reply =~ /(.*)\/(\d\d)$/;
+				($reply, $checksum) =  ($1, $2);
+				if ( $checksum == $self->_checksum($reply . "/")) {
+					$self->debug("      Got Reply [%s]", $reply);
+					$self->{_SERIAL}->write($control->{'ACK'});
+					if ( $reply =~ /^0E/ ) {
+						$self->debug("      Will retry because of busyness");
+						sleep 2;
+						next BUSY;
+					} else {
+						$self->debug("      Done Getting reply");
+						$state = "DONE";
+						last REPLY;
+					}
+				} else {
+					$self->{_SERIAL}->write($control->{'NAK'});
+					$self->debug("      Discarding because of bad checksum");
+				}
+			}
+		}
+		if ($state ne "DONE") {
+			$reply{DATA}   = "02/0/";
+			return %reply;
+		} else {
+			$reply{DATA}   = $reply;	
+			return %reply;
+		}
 	}
 
-	$reply{DATA}   = $reply;	
+	$self->debug("      Too busy device... aborting");
+	$reply{DATA}   = "0E/0/";
 	return %reply;
+}
+
+sub _sdnpQuery {
+	my($self)  = shift @_;
+	return (0, undef);
 }
 
 sub _checksum {
