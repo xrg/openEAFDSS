@@ -59,7 +59,6 @@ sub init {
 			"SN"     => $self->{SN},
 			"DIR"    => $self->{DIR},
 			"DEBUG"  => $self->{_DEBUG}
-		#) || return $self->error('Bad constructor!');
 		);
 
 	if (!defined $fd) {
