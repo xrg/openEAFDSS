@@ -358,10 +358,12 @@ type of the printing line, and one for the actual printing message.
    0x50: File contains invalid characters
 
 =head1 EXAMPLES
+
 Take a look at the examples directory of the distribution for a complete command line utility (OpenEAFDSS.pl) using the
 library.
 
 =head1 SUPPORT / WARRANTY
+
 The EAFDSS is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
 
 =head1 VERSION
