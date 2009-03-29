@@ -1,73 +1,49 @@
 use Test::More qw(no_plan);
 
-our($signsDir) = "/tmp/signs-testing";
-
 BEGIN {
-	print("***** NON INTERACTIVE TESTS\n\n");
-	print("***** SECTION: EAFDSS\n");
 	use_ok('EAFDSS'); 
 }
 
-sub createHandle {
-	my($curDriver) = shift @_;
-	my($dh);
+our($signsDir) = "/tmp/signs-testing";
+our($tmp_invoice) = "/tmp/invoice.txt";
 
-	if ($curDriver eq 'Dummy') {
-		$dh = new EAFDSS(
-			"DRIVER" => "EAFDSS::" . $curDriver . "::/tmp/dummy.eafdss",
-			"SN"     => "ABC02000001",
-			"DIR"    => "/tmp/signs03",
-			"DEBUG"  => 0
-		);
-	}
-
-	return $dh;
-}
+unlink($tmp_invoice);
+rmdir($signsDir);
+mkdir($signsDir);
 
 my(@drivers) = EAFDSS->available_drivers();
 ok(@drivers,  "Found drivers");
-print("\n");
 
-my($curDriver);
-foreach $curDriver (@drivers) {
-	rmdir($signsDir);
-	mkdir($signsDir);
+my($dh) = new EAFDSS(
+		"DRIVER" => "EAFDSS::Dummy::/tmp/dummy.eafdss",
+		"SN"     => "ABC02000001",
+		"DIR"    => $signsDir,
+		"DEBUG"  => 0
+	);
+ok(defined $dh, "Defined EAFDSS driver handle");
+ok($dh->isa("EAFDSS::Dummy"),  "Loaded EAFDSS::Dummy driver");
 
-	my($result);
-	print("***** SECTION: $curDriver Module\n");
+my($result);
 
-	SKIP: {
-		skip "non interactive tests", 3 if ( ($curDriver eq 'SDSP') || ($curDriver eq 'SDNP') );
+$result = $dh->Status();
+ok($result,  "Operation STATUS");
 
-		my($dh) = createHandle($curDriver);
+$result = $dh->GetTime();
+ok($result, "Operation GET TIME");
 
-		ok(defined $dh, "Defined handle");
-		ok($dh->isa("EAFDSS::$curDriver"),  "Loaded EAFDSS::$curDriver var");
+$result = $dh->Info();
+ok($result, "Operation INFO");
 
-		$result = $dh->Status();
-		ok($result,  "Operation STATUS");
+open(INVOICE, ">> $tmp_invoice");
+print(INVOICE "TEST OpenEAFDSS invoice Document\n");
+close(INVOICE); 
 
-		$result = $dh->GetTime();
-		ok($result, "Operation GET TIME");
-
-		$result = $dh->Info();
-		ok($result, "Operation INFO");
-
-		my($tmp_invoice) = "/tmp/invoice.txt";
-		open(INVOICE, ">> $tmp_invoice");
-		print(INVOICE "TEST OpenEAFDSS invoice Document\n");
-		close(INVOICE); 
-
-		$result = $dh->Sign($tmp_invoice);
-		ok($result, "Operation SIGN");
+$result = $dh->Sign($tmp_invoice);
+ok($result, "Operation SIGN");
 	
-		unlink($tmp_invoice);
+unlink($tmp_invoice);
 
-		$result = $dh->Report();
-		ok($result, "Operation REPORT");
-	}
+$result = $dh->Report();
+ok($result, "Operation REPORT");
 
-	rmdir($signsDir);
-	print("\n");
-}
-
+rmdir($signsDir);

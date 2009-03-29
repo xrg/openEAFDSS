@@ -3,7 +3,7 @@ use Test::More qw(no_plan);
 
 BEGIN {
 	print("***** INTERACTIVE TESTS\n\n");
-	print("***** SECTION: EAFDSS\n");
+	print("***** MODULE: EAFDSS\n");
 	use_ok('EAFDSS'); 
 }
 
@@ -56,7 +56,7 @@ foreach $curDriver (@drivers) {
 	mkdir($signsDir);
 
 	my($result);
-	print("***** SECTION: $curDriver Module\n");
+	print("***** MODULE: $curDriver Module\n");
 
 	my($dh) = createHandle($curDriver);
 
@@ -74,15 +74,12 @@ foreach $curDriver (@drivers) {
 
 		$result = $dh->SetTime('29/03/09 12:45:57');
 		is($result, 0, "Operation SET TIME");
-		sleep 2;
 
 		$result = $dh->GetHeaders();
 		ok($result, "Operation GET HEADERS");
-		sleep 3;
 
 		$result = $dh->SetHeaders("0/H01/0/H02/0/H03/0/H04/0/H05/0/H06");
 		is($result, 0, "Operation SET HEADERS");
-		sleep 2;
 	}
 
 	$result = $dh->Info();
