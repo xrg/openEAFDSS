@@ -5,6 +5,7 @@ README
 GPL.txt
 LGPL.txt
 t/EAFDSS.t
+t/interactive/EAFDSS.t
 lib/EAFDSS.pm
 lib/EAFDSS/Base.pm
 lib/EAFDSS/Micrelec.pm

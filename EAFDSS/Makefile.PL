@@ -28,7 +28,6 @@ my(%config) = (
 		"Socket"             => 1.78,
 		"Class::Base"        => 0.03,
 		"IO::Socket::INET"   => 1.31,
-		"Time::HiRes"        => 1.86,
 		"Digest::SHA1"       => 2.11,
 		"Config::IniHash"    => 3.00,
 		"Device::SerialPort" => 1.00
