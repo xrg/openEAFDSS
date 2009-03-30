@@ -15,7 +15,6 @@ use POSIX;
 use Carp;
 use Class::Base;
 use Device::SerialPort;
-use Data::Dumper;
 
 use base qw (EAFDSS::Micrelec );
 

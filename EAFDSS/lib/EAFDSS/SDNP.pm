@@ -16,7 +16,6 @@ use Carp;
 use Class::Base;
 use Socket;
 use IO::Socket::INET;
-use Data::Dumper;
 
 use base qw (EAFDSS::Micrelec );
 

@@ -22,6 +22,7 @@ sub isInteractive () {
 my(%config) = (
     NAME              => 'EAFDSS',
     VERSION_FROM      => 'lib/EAFDSS.pm',
+    license( 'perl' ),
     PREREQ_PM         => {
 		"Switch"             => 2.10,
 		"Carp"               => 1.04,
@@ -36,6 +37,15 @@ my(%config) = (
       (ABSTRACT_FROM  => 'lib/EAFDSS.pm', # retrieve abstract from module
        AUTHOR         => 'Hasiotis Nikos (hasiotis@gmail.com)') : ()),
 );
+
+sub license {
+	my $lic = shift;
+	local $^W = 0;    # Silence warning about non-numeric version
+	return
+		unless $ExtUtils::MakeMaker::VERSION >= '6.31';
+	return ( LICENSE => $lic );
+}
+
 
 my(@test_files);
 

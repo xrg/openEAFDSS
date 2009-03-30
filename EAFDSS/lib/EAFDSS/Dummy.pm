@@ -15,7 +15,6 @@ use Class::Base;
 use Switch;
 use Digest::SHA1  qw(sha1_hex);
 use Config::IniHash;
-use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
 

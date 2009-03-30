@@ -12,7 +12,6 @@ use strict;
 use warnings;
 use Carp;
 use Class::Base;
-use Data::Dumper;
 
 use base qw ( Class::Base );
 

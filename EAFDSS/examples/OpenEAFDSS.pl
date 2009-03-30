@@ -22,11 +22,9 @@
 # ID: $Id$
 
 use strict;
-use lib "../lib";
 use Switch;
 use EAFDSS; 
 use Getopt::Std;
-use Data::Dumper; 
 use Config::General qw(ParseConfig);
 
 my(%progie) = ( name      => 'OpenEAFDSS.pl',

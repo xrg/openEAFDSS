@@ -13,7 +13,6 @@ use warnings;
 use Switch;
 use Carp;
 use Class::Base;
-use Data::Dumper;
 
 use base qw ( EAFDSS::Base );
 

@@ -25,7 +25,7 @@ use strict;
 use Config::IniFiles;
 use Data::Dumper;
 use Curses::UI;
-use EAFDSS::SDNP; 
+use EAFDSS; 
 
 
 my($cfg) = Config::IniFiles->new(-file => "OpenEAFDSS.ini", -nocase => 1);
@@ -47,13 +47,11 @@ my($menuFile) = [
 	{ -label => ' Exit      ^Q', -value => \&exitDialog     }
 ];
 my($menuActions) = [
-	{ -label => ' Sign File      ', -value => \&signFileDialog       },
 	{ -label => ' Issue Z Report ', -value => \&issueReportDialog    },
 	{ -label => ' Get Status     ', -value => \&getStatusDialog      },
 	{ -label => ' Set Headers    ', -value => \&setHeadersDialog     },
 	{ -label => ' Get Headers    ', -value => \&getHeadersDialog     },
 	{ -label => ' Read Time      ', -value => \&readTimeDialog       },
-	{ -label => ' Read Device ID ', -value => \&readDeviceIdDialog   },
 	{ -label => ' Version Info   ', -value => \&versionInfoDialog    },
 	{ -label => ' Display Message', -value => \&displayMessageDialog },
 ];
@@ -98,25 +96,6 @@ sub exitDialog {
 			-buttons   => ['yes', 'no'],
 		);
 	exit(0) if $return;
-}
-
-sub signFileDialog {
-	my($file) = $cui->filebrowser();
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply, $sign) = $FD->Sign($file);
-	if ($reply == 0) {
-		$cui->dialog(
-			-title => "Signature",
-			-message => $sign,
-			-x => 30, -y => 20
-		)
-	} else {
-		my($curError, $curFixProposal) = $FD->errMessage($reply);
-		$cui->dialog(
-			-title => "Error signing file",
-			-message => $curError 
-		)
-	}
 }
 
 sub issueReportDialog {
@@ -423,20 +402,25 @@ sub readTimeDialog {
 }
 
 sub readDeviceIdDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply, $devID) = $FD->ReadDeviceID();
-	if ($reply == 0) {
-		$cui->dialog(
-			-title => "Device ID",
-			-message => $devID,
-			-x => 30, -y => 20
-		)
-	} else {
-		my($curError, $curFixProposal) = $FD->errMessage($reply);
-		$cui->dialog(
-			-title => "Error reading device id",
-			-message => $curError 
-		)
+	my($dh) = loadDriverHandle();
+
+	if ($dh) {
+		my($result) = $dh->Info();
+		if ($result) {
+			$cui->dialog(
+				-title => "Device ID",
+				-message => $result,
+				-x => 30, -y => 20
+			)
+		} else {
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
+
+			$cui->dialog(
+				-title => "Error reading device id",
+				-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
+			)
+		}
 	}
 }
 
@@ -529,6 +513,22 @@ sub displayMessageDialog {
 
 	$btnBox->focus();
 	$winDisplayMessage->modalfocus();
+}
+
+sub loadDriverHandle {
+	my($dh) = new EAFDSS(
+			"DRIVER" => "EAFDSS::SDNP::" . $curIpAddress,
+			"SN"     => $curDeviceID,
+			"DIR"    => $curSignsDir,
+			"DEBUG"  => 0
+		);
+
+	if (! $dh) {
+		$cui->dialog("ERROR: " . EAFDSS->error());
+		return undef;
+	}
+
+	return $dh;
 }
 
 sub browseDialog {
