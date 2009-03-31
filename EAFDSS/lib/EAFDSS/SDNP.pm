@@ -130,7 +130,7 @@ sub SendRequest {
 							for ($i=0; $i < length($reply{DATA}); $i++) {
 								$checksum += ord substr($reply{DATA}, $i, 1);
 							}
-							$self->debug(  "        Checking Data checksum [%04X]", $checksum);
+							#$self->debug(  "        Checking Data checksum [%04X]", $checksum);
 							if ($checksum != $reply{CHECKSUM}) {
 								# Create and send NAK frame with FSN set to received FSN;
 								my($msg) = $self->sdnpPacket(0x13, 0x00);
@@ -369,17 +369,17 @@ sub _sdnpFrameCheck {
 	my($self)   = shift @_;
 	my($frame)  = shift @_;
 
-	$self->debug(  "    Checking Frame");
+	#$self->debug(  "    Checking Frame");
 
 	# Check sender ip
 	my($ip) = inet_ntoa(inet_aton($self->{IP})); 
-	$self->debug(  "        Comparing [%s][%s]", $frame->{HOST}, $ip);
+	#$self->debug(  "        Comparing [%s][%s]", $frame->{HOST}, $ip);
 	if ($frame->{HOST} ne $ip) {
 		return 0;
 	}
 
 	# Check if size of UDP frame < size of SDNP header then: 
-	$self->debug(  "        Checking frame size [%d]", length($frame->{RAW}));
+	#$self->debug(  "        Checking frame size [%d]", length($frame->{RAW}));
 	if (length($frame->{RAW}) < 12) {
 		return 0;
 	}
@@ -394,19 +394,19 @@ sub _sdnpFrameCheck {
 	for ($i=0; $i < 10 ; $i++) {
 		$checksum += ord substr($frame->{RAW}, $i, 1);
 	}
-	$self->debug(  "        Checking frame header checksum [%04X]", $checksum);
+	#$self->debug(  "        Checking frame header checksum [%04X]", $checksum);
 	if ($checksum != $frame->{HEADER_CHECKSUM}) {
 		return 0;
 	}
 
 	# Check if UDP frame size <> SDNP header data length +  SDNP header size then:
-	$self->debug(  "        Checking UDP frame size [%d]", length($frame->{RAW}));
+	#$self->debug(  "        Checking UDP frame size [%d]", length($frame->{RAW}));
 	if (length($frame->{RAW}) != 12 + $frame->{LENGTH}) {
 		return 0;
 	}
 
 	# Check if frame id in SDNP header <> SDNP device protocol id then:
-	$self->debug(  "        Checking frame id [%04X]", $frame->{ID});
+	#$self->debug(  "        Checking frame id [%04X]", $frame->{ID});
 	if ($frame->{ID} != 0x7A2D) {
 		return 0;
 	}
@@ -459,14 +459,14 @@ sub _sdnpPrintFrame {
 	$self->debug($format, $tmpString);
 
 	my(%frame) = $self->_sdnpAnalyzeFrame($msg);
-	$self->debug("\t\t  ID..................[%04X]", $frame{ID});
-	$self->debug("\t\t  SN..................[%04X]", $frame{SN});
-	$self->debug("\t\t  OPCODE..............[  %02X]", $frame{OPCODE});
-	$self->debug("\t\t  OPDATA..............[  %02X]", $frame{OPDATA});
-	$self->debug("\t\t  LENGTH..............[%04X]", $frame{LENGTH});
-	$self->debug("\t\t  CHECKSUM............[%04X]", $frame{CHECKSUM});
-	$self->debug("\t\t  HEADER_CHECKSUM.....[%04X]", $frame{HEADER_CHECKSUM});
-	$self->debug("\t\t  DATA................[%s]", $frame{DATA});
+	#$self->debug("\t\t  ID..................[%04X]", $frame{ID});
+	#$self->debug("\t\t  SN..................[%04X]", $frame{SN});
+	#$self->debug("\t\t  OPCODE..............[  %02X]", $frame{OPCODE});
+	#$self->debug("\t\t  OPDATA..............[  %02X]", $frame{OPDATA});
+	#$self->debug("\t\t  LENGTH..............[%04X]", $frame{LENGTH});
+	#$self->debug("\t\t  CHECKSUM............[%04X]", $frame{CHECKSUM});
+	#$self->debug("\t\t  HEADER_CHECKSUM.....[%04X]", $frame{HEADER_CHECKSUM});
+	#$self->debug("\t\t  DATA................[%s]", $frame{DATA});
 
 	return; 
 }
@@ -509,7 +509,7 @@ sub _getTimer {
 	my($realtime, $user, $system, $cuser, $csystem) = POSIX::times();
 	my($clock_ticks) = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
-	$self->debug("      TIMER[%s]: %4.4f - %4.4f", $t, $realtime/$clock_ticks - $self->{$t}->{START}, $self->{$t}->{DURATION});
+	#$self->debug("      TIMER[%s]: %4.4f - %4.4f", $t, $realtime/$clock_ticks - $self->{$t}->{START}, $self->{$t}->{DURATION});
 
 	return $realtime/$clock_ticks - $self->{$t}->{START} - $self->{$t}->{DURATION};
 }

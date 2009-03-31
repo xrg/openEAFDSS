@@ -2,7 +2,6 @@ use 5.006001;
 use strict;
 use warnings;
 use Data::Dumper;
-use POSIX qw/getpgrp tcgetpgrp/;
 use ExtUtils::MakeMaker qw( WriteMakefile prompt );
 
 my(%config) = (

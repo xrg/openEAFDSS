@@ -6,6 +6,8 @@ GPL.txt
 LGPL.txt
 t/00_Common.t
 t/01_Dummy.t
+t/02_SDNP.t
+t/03_SDSP.t
 lib/EAFDSS.pm
 lib/EAFDSS/Base.pm
 lib/EAFDSS/Micrelec.pm
