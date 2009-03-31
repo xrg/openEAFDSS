@@ -14,7 +14,7 @@ use Carp;
 use Class::Base;
 use Switch;
 use Digest::SHA1  qw(sha1_hex);
-use Config::IniHash;
+use Config::IniFiles;
 
 use base qw ( EAFDSS::Base );
 
@@ -68,28 +68,28 @@ sub PROTO_GetSign {
 	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
 	$time = sprintf("%02d%02d%02d", $hour, $min, $sec);
 
-	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
-	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
-	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
-	$nextZ      = $dummy->{MAIN}->{CUR_FISCAL};
+	$totalSigns = $dummy->val('MAIN', 'TOTAL_SIGN');
+	$dailySigns = $dummy->val('MAIN', 'CUR_SIGN');
+	$nextZ      = $dummy->val('MAIN', 'CUR_FISCAL');
 
-	$maxFiscal  = $dummy->{MAIN}->{MAX_FISCAL};
-	$maxSigns   = $dummy->{MAIN}->{MAX_SIGNS};
+	$maxFiscal  = $dummy->val('MAIN', 'MAX_FISCAL');
+	$maxSigns   = $dummy->val('MAIN', 'MAX_SIGNS');
 
 	if ($dailySigns >= $maxSigns) {
 		return (-1);
 	}
 
-	$dummy->{MAIN}->{TOTAL_SIGN} = $totalSigns + 1;
-	$dummy->{MAIN}->{CUR_SIGN}   = $dailySigns + 1;
+	$dummy->newval('MAIN', 'TOTAL_SIGN', $totalSigns + 1);
+	$dummy->newval('MAIN', 'CUR_SIGN', $dailySigns + 1);
 
 	$data .= sprintf("%s%08d%04d%s%s", $self->{SN}, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time));
 
 	$sign = uc(sha1_hex($data));
-	$dummy->{SIGNS}->{$dailySigns} = $sign;
+	$dummy->newval('SIGNS', $dailySigns,  $sign);
 
-  	WriteINI($self->{FILENAME}, $dummy);
+	$dummy->RewriteConfig();
 
 	return (0, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign);
 }
@@ -140,10 +140,10 @@ sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
 
 	$self->debug("  [PROTO] Read Device ID");
-	my($dummy) = ReadINI($self->{FILENAME});
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
 	if ($dummy) {
-		my($deviceId) = $dummy->{MAIN}->{SERIAL};
+		my($deviceId) = $dummy->val('MAIN', 'SERIAL');
 		return (0, $deviceId);
 	} else {
 		return (-1);
@@ -154,10 +154,10 @@ sub PROTO_VersionInfo {
 	my($self) = shift @_;
 
 	$self->debug("  [PROTO] Read Device Version");
-	my($dummy) = ReadINI($self->{FILENAME});
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
 	if ($dummy) {
-		my($version) = $dummy->{MAIN}->{VERSION};
+		my($version) = $dummy->val('MAIN', 'VERSION');
 		return (0, $version);
 	} else {
 		return (-1);
@@ -185,20 +185,20 @@ sub PROTO_ReadClosure {
 	my(%reply, $replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure, $curZ);
 
 	$self->debug("  [PROTO] Read Closure [%d]", $index);
-	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
 	my($sec, $min, $hour, $mday, $mon, $year) = localtime();
 	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
 	$time = sprintf("%02d%02d%02d", $hour, $min, $sec);
 
-	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
-	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
-	$curZ       = $dummy->{MAIN}->{CUR_FISCAL};
+	$totalSigns = $dummy->val('MAIN', 'TOTAL_SIGN');
+	$dailySigns = $dummy->val('MAIN', 'CUR_SIGN');
+	$curZ       = $dummy->val('MAIN', 'CUR_FISCAL');
 
 	if ($index == 0) {
-		$z = $dummy->{FISCAL}->{$curZ-1};
+		$z = $dummy->val('FISCAL', $curZ-1);
 	} else {
-		$z = $dummy->{FISCAL}->{$index};
+		$z = $dummy->val('FISCAL', $index);
 	}
 	$closure    = $curZ-1;
 
@@ -210,13 +210,13 @@ sub PROTO_ReadSummary {
 	my(%reply, $replyCode, $status1, $status2, $lastZ, $totalSigns, $dailySigns, $maxSigns);
 
 	$self->debug("  [PROTO] Read Summary");
-	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
-	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
-	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
-	$lastZ      = $dummy->{MAIN}->{CUR_FISCAL};
+	$totalSigns = $dummy->val('MAIN', 'TOTAL_SIGN');
+	$dailySigns = $dummy->val('MAIN', 'CUR_SIGN');
+	$lastZ      = $dummy->val('MAIN', 'CUR_FISCAL');
 
-	$maxSigns   = $dummy->{MAIN}->{MAX_SIGNS};
+	$maxSigns   = $dummy->val('MAIN', 'MAX_SIGNS');
 
 	return (0, 0, 0, $lastZ-1, $totalSigns-1, $dailySigns-1, 0, $maxSigns - $dailySigns + 1);
 }
@@ -226,28 +226,33 @@ sub PROTO_IssueReport {
 	my(%reply, $replyCode, $status1, $status2, $dailySigns, $lastZ, $i, $z, $data, $time, $date, $totalSigns);
 
 	$self->debug("  [PROTO] Issue Report");
-	my($dummy) = ReadINI($self->{FILENAME}, 'case' => 'toupper');
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
 	my($sec, $min, $hour, $mday, $mon, $year) = localtime();
 	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
 	$time = sprintf("%02d%02d%02d", $hour, $min, $sec);
 
-	$totalSigns = $dummy->{MAIN}->{TOTAL_SIGN};
-	$dailySigns = $dummy->{MAIN}->{CUR_SIGN};
-	$lastZ      = $dummy->{MAIN}->{CUR_FISCAL};
+	$totalSigns = $dummy->val('MAIN', 'TOTAL_SIGN');
+	$dailySigns = $dummy->val('MAIN', 'CUR_SIGN');
+	$lastZ      = $dummy->val('MAIN', 'CUR_FISCAL');
 
-	$dummy->{MAIN}->{CUR_FISCAL} = $dummy->{MAIN}->{CUR_FISCAL} + 1;
+	$dummy->newval('MAIN', 'CUR_FISCAL', $dummy->val('MAIN', 'CUR_FISCAL') + 1);
 
 	$data = "";
-	for ($i=1; $i < $dummy->{MAIN}->{CUR_SIGN}; $i++) {
-		$data .= $dummy->{SIGNS}->{$i};
+	for ($i=1; $i < $dummy->val('MAIN', 'CUR_SIGN'); $i++) {
+		$data .= $dummy->val('SIGNS', $i);
 	}
 
 	$z = uc(sha1_hex($data));
-	$dummy->{FISCAL}->{$lastZ} = $z;
-	$dummy->{MAIN}->{CUR_SIGN} = 1;
 
-  	WriteINI($self->{FILENAME}, $dummy);
+	for ($i=1; $i < $dummy->val('MAIN', 'CUR_SIGN'); $i++) {
+		$dummy->delval('SIGNS', $i);
+	}
+
+	$dummy->newval('FISCAL', $lastZ, $z);
+	$dummy->newval('MAIN', 'CUR_SIGN', 1);
+
+	$dummy->RewriteConfig();
 
 	return (0);
 }
