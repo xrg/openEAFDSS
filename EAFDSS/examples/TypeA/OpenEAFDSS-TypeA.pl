@@ -52,13 +52,14 @@ my($menuActions) = [
 	{ -label => ' Set Headers    ', -value => \&setHeadersDialog     },
 	{ -label => ' Get Headers    ', -value => \&getHeadersDialog     },
 	{ -label => ' Read Time      ', -value => \&readTimeDialog       },
+	{ -label => ' Set Time       ', -value => \&setTimeDialog        },
 	{ -label => ' Version Info   ', -value => \&versionInfoDialog    },
 	{ -label => ' Display Message', -value => \&displayMessageDialog },
 ];
 my($menuUtilities) = [
-	{ -label => ' Browse Files   ', -value => \&browseDialog   },
-	{ -label => ' Validate Files ', -value => \&validateDialog },
-	{ -label => ' Check Device   ', -value => \&checkDialog    }
+	{ -label => ' Browse Invoice      ', -value => \&browseDialog   },
+	{ -label => ' Search Invoices     ', -value => \&browseDialog   },
+	{ -label => ' Validate A,B,C Files', -value => \&validateDialog },
 ];
 my($menuHelp) = [
 	{ -label => ' Help ', -value => \&helpDialog },

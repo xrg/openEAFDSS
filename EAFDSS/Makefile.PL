@@ -15,7 +15,7 @@ my(%config) = (
 		"Class::Base"        => 0.03,
 		"IO::Socket::INET"   => 1.31,
 		"Digest::SHA1"       => 2.11,
-		"Config::IniHash"    => 3.00,
+		"Config::IniFiles"   => 2.38,
 		"Device::SerialPort" => 1.00
 	 },
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005

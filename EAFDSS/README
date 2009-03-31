@@ -21,10 +21,11 @@ This module requires these other modules and libraries:
 * Switch
 * Carp
 * Socket
+* Class::Base
 * IO::Socket::INET
-* Time::HiRes
 * Digest::SHA1
-* Config::IniHash
+* Config::IniFiles
+* Device::SerialPort
 
 COPYRIGHT AND LICENCE
 
