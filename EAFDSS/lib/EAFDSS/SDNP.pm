@@ -21,6 +21,14 @@ use base qw (EAFDSS::Micrelec );
 
 our($VERSION) = '0.20';
 
+my($clock_ticks);
+if ( $^O =~ /MSWin32/ ) {
+	$clock_ticks = 1000;
+} else {
+	$clock_ticks = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
+}
+
+
 sub init {
 	my($class)  = shift @_;
 	my($config) = @_;
@@ -496,7 +504,6 @@ sub _setTimer {
 	my($msec) = shift @_;
 
 	my($realtime, $user, $system, $cuser, $csystem) = POSIX::times();
-	my($clock_ticks) = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
 	$self->{$t}->{START}    = $realtime/$clock_ticks;
 	$self->{$t}->{DURATION} = $msec; 
@@ -507,7 +514,6 @@ sub _getTimer {
 	my($t)    = shift @_;
 
 	my($realtime, $user, $system, $cuser, $csystem) = POSIX::times();
-	my($clock_ticks) = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 
 	#$self->debug("      TIMER[%s]: %4.4f - %4.4f", $t, $realtime/$clock_ticks - $self->{$t}->{START}, $self->{$t}->{DURATION});
 
