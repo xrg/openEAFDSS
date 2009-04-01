@@ -14,7 +14,6 @@ use POSIX;
 
 use Carp;
 use Class::Base;
-use Device::SerialPort;
 
 use base qw (EAFDSS::Micrelec );
 
@@ -44,7 +43,16 @@ sub init {
 	}
 
 	$self->debug("  Serial Device Initialization [%s]", $self->{SERIAL});
-	$self->{_SERIAL} = Device::SerialPort->new($self->{SERIAL});
+	if ($^O eq 'MSWin32') {
+		require Win32::SerialPort;
+		$self->{_SERIAL} = Win32::SerialPort->new($self->{SERIAL});
+
+ 	} else {
+		require Device::SerialPort;
+		$self->{_SERIAL} = Device::SerialPort->new($self->{SERIAL});
+	}
+
+
 	if (! defined $self->{_SERIAL}) {
 		return undef;
 	}
@@ -93,7 +101,6 @@ sub SendRequest {
 			$count_out = $self->{_SERIAL}->write($control->{'CAN'});
 			$count_out = $self->{_SERIAL}->write($control->{'CAN'});
 			$count_out = $self->{_SERIAL}->write($control->{'ENQ'});
-			$self->{_SERIAL}->write_drain();
 			if ($count_out) {
 				my($count_in, $ack) = $self->{_SERIAL}->read(1);
 				if ($count_in && ($ack eq $control->{'ACK'} ) ) {
@@ -115,7 +122,6 @@ sub SendRequest {
 			my($count_out);
 			$self->debug("    Sending PACKET [try %d]", $try);
 			$count_out = $self->{_SERIAL}->write($packet);
-			$self->{_SERIAL}->write_drain();
 			if ($count_out == length($packet) ) {
 				my($count_in, $ack) = $self->{_SERIAL}->read(1);
 				if ($count_in && ($ack eq $control->{'ACK'} ) ) {
