@@ -654,7 +654,7 @@ sub aboutDialog {
 		-bfg => 'blue', -bbg => 'black',
 		-title => "About OpenEAFDSS",
 		-message =>
-			"OpenEAFDSS-GUI.pl ver 0.39_01 - Copyright (C) 2008 by Hasiotis Nikos " . "\n" .
+			"OpenEAFDSS-GUI.pl ver 0.40 - Copyright (C) 2008 by Hasiotis Nikos " . "\n" .
 			"                                                                     " . "\n" .
 			"This program is free software: you can redistribute it and/or modify " . "\n" .
 			"it under the terms of the GNU General Public License as published by " . "\n" .

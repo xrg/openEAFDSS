@@ -1,5 +1,5 @@
-EAFDSS version 0.39_01
-======================
+EAFDSS version 0.40
+====================
 
 This library handles the communication with an Electronic Signature
 Device (EAFDSS - ΕΑΦΔΣΣ). It also handles all necessary file housekeeping
@@ -16,7 +16,7 @@ To install this module type the following:
 
 DEPENDENCIES
 
-This module requires these other modules and libraries:
+This module requires the following modules and libraries:
 
 * Switch
 * Carp

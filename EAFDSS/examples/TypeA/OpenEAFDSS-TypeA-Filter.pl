@@ -31,7 +31,7 @@ use Config::IniFiles;
 my(%progie) = ( name      => 'OpenEAFDSS-TypeA-Filter.pl',
                 author    => 'Nikos Hasiotis (hasiotis@gmail.com)',
                 copyright => 'Copyright (c) 2008 Hasiotis Nikos, all rights reserved',
-                version   => '0.39_01');
+                version   => '0.40');
 
 our($debug) = 1;
 

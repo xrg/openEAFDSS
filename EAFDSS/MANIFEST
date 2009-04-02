@@ -8,6 +8,7 @@ t/00_Common.t
 t/01_Dummy.t
 t/02_SDNP.t
 t/03_SDSP.t
+t/99_Pod.t
 lib/EAFDSS.pm
 lib/EAFDSS/Base.pm
 lib/EAFDSS/Micrelec.pm
@@ -17,5 +18,6 @@ lib/EAFDSS/Dummy.pm
 examples/invoice.txt
 examples/OpenEAFDSS.conf
 examples/OpenEAFDSS.pl
+examples/TypeA/OpenEAFDSS-TypeA-Filter.pl
 examples/TypeA/OpenEAFDSS-TypeA.pl
 examples/TypeA/OpenEAFDSS-TypeA.ini

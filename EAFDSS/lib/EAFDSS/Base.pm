@@ -15,7 +15,7 @@ use Class::Base;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.39_01';
+our($VERSION) = '0.40';
 
 sub init {
 	my($self, $config) = @_;
@@ -484,7 +484,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.39_01.
+This is version 0.40.
 
 =head1 AUTHOR
 

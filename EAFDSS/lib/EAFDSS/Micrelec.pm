@@ -16,7 +16,7 @@ use Class::Base;
 
 use base qw ( EAFDSS::Base );
 
-our($VERSION) = '0.39_01';
+our($VERSION) = '0.40';
 
 sub PROTO_DetailSign {
 	my($self) = shift @_;
@@ -399,7 +399,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.39_01.
+This is version 0.40.
 
 =head1 AUTHOR
 
