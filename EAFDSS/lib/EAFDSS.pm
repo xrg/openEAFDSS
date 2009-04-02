@@ -15,7 +15,7 @@ use Class::Base;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.20';
+our($VERSION) = '0.39_01';
 
 sub init {
 	my($self, $config) = @_;
@@ -367,7 +367,7 @@ The EAFDSS is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
 
 =head1 VERSION
 
-This is version 0.20. This version has a finalised API and full functionallity but still contains known bugs. NOT TO BE
+This is version 0.39_01. This version has a finalised API and full functionallity but still contains known bugs. NOT TO BE
 USED IN A PRODUCTION ENVIRONMENT.
 
 =head1 AUTHOR

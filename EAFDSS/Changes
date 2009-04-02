@@ -1,5 +1,11 @@
 Revision history for Perl extension EAFDSS.
 
+Version 0.39_01	02/04/2009 - Beta version
+
+  + More windows friendly version
+  + Bug Fixes
+  + This is a beta version 
+
 Version 0.20	23/03/2009 - API complete version
 
   + Added support for the serial micrelec devices

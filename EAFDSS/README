@@ -1,5 +1,5 @@
-EAFDSS version 0.20
-===================
+EAFDSS version 0.39_01
+======================
 
 This library handles the communication with an Electronic Signature
 Device (EAFDSS - ΕΑΦΔΣΣ). It also handles all necessary file housekeeping

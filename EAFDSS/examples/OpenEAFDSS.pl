@@ -55,7 +55,6 @@ sub main() {
 		case "STATUS"  { cmdStatus($dh)             }
 		case "INFO"    { cmdInfo($dh)               }
 		case "TIME"    { cmdTime($dh, $cmdParam)    }
-		case "QUERY"   { cmdQuery($dh)              }
 		case "HEADERS" { cmdHeaders($dh, $cmdParam) }
 	}
 }
@@ -148,24 +147,6 @@ sub cmdTime() {
 		}
 	}
 
-}
-
-sub cmdQuery() {
-	my($dh) = shift @_;
-
-	my($devices) = $dh->Query();
-	my($errNo)  = $dh->error();
-	if ($devices) {
-		while ( my($key, $value) = each %$devices) {
-			printf("%s\n", $key);
-		}
-		exit(0);
-	} else {
-		my($errNo)  = $dh->error();
-		my($errMsg) = $dh->errMessage($errNo);
-		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
-		exit($errNo);
-	}
 }
 
 sub cmdHeaders() {
@@ -263,7 +244,6 @@ sub print_help() {
 	printf("\t                                         - STATUS                   \n");
 	printf("\t                                         - REPORT                   \n");
 	printf("\t                                         - INFO                     \n");
-	printf("\t                                         - QUERY                    \n");
 	printf("\t                                         - HEADERS [headers])       \n");
 	printf("\n  Example 1: $progie{name} -d EAFDSS::SDNP -p hostname -e \"SIGN invoice.txt\"\n");
 	printf("\n             This command will sign the file invoice.txt printing the signature");

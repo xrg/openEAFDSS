@@ -18,7 +18,7 @@ use Config::IniFiles;
 
 use base qw ( EAFDSS::Base );
 
-our($VERSION) = '0.20';
+our($VERSION) = '0.39_01';
 
 sub init {
 	my($class)  = shift @_;
@@ -365,7 +365,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.20.
+This is version 0.39_01.
 
 =head1 AUTHOR
 

@@ -16,7 +16,7 @@ use Class::Base;
 
 use base qw ( EAFDSS::Base );
 
-our($VERSION) = '0.20';
+our($VERSION) = '0.39_01';
 
 sub PROTO_DetailSign {
 	my($self) = shift @_;
@@ -155,6 +155,10 @@ sub PROTO_SetTime {
 	my($time) = shift @_;
 
 	$self->debug("  [PROTO] Set Time");
+	if (length($time) < 16) {
+		return hex(3);
+	}
+
         my($pdate) = substr($time, 0, 2) . substr($time, 3, 2) . substr($time, 6, 2);
         my($ptime) = substr($time, 9, 2) . substr($time, 12, 2) . substr($time, 15, 2);
 	my(%reply) = $self->SendRequest(0x21, 0x00, "T/$pdate/$ptime/");
@@ -395,7 +399,7 @@ Read EAFDSS on how to use the module.
 
 =head1 VERSION
 
-This is version 0.20.
+This is version 0.39_01.
 
 =head1 AUTHOR
 

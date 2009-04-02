@@ -28,11 +28,14 @@ use Curses::UI;
 use EAFDSS; 
 
 
-my($cfg) = Config::IniFiles->new(-file => "OpenEAFDSS.ini", -nocase => 1);
-my($curDeviceID) = $cfg->val('MAIN', 'DeviceID');
-my($curSignsDir) = $cfg->val('MAIN', 'SignsDir');
-my($curIpAddress) = $cfg->val('MAIN', 'ipAdress');
-my($curDebug) = $cfg->val('MAIN', 'Debug');
+my($cfg) = Config::IniFiles->new(-file => "OpenEAFDSS-TypeA.ini", -nocase => 1);
+
+my($ABC_DIR) = $cfg->val('MAIN', 'ABC_DIR', '/tmp/signs');
+my($SQLITE)  = $cfg->val('MAIN', 'SQLITE', '/tmp/eafdss.sqlite');
+
+my($SN)      = $cfg->val('DEVICE', 'SN', 'ABC02000001');
+my($DRIVER)  = $cfg->val('DEVICE', 'DRIVER', 'SDNP');
+my($PARAM)   = $cfg->val('DEVICE', 'PARAM', 'localhost');
 
 my(%reply);
 my($cui) = new Curses::UI(
@@ -46,30 +49,29 @@ my($menuFile) = [
 	{ -label => ' Settings  ^S', -value => \&settingsDialog },
 	{ -label => ' Exit      ^Q', -value => \&exitDialog     }
 ];
-my($menuActions) = [
-	{ -label => ' Issue Z Report ', -value => \&issueReportDialog    },
+my($menuTypeA) = [
+	{ -label => ' Issue Z Report ',   -value => \&issueReportDialog   },
+	{ -label => ' Browse Invoices',   -value => \&browseInvoiceDialog },
+	{ -label => ' Search Invoices',   -value => \&searchInvoiceDialog },
+	{ -label => ' Check A,B,C Files', -value => \&checkABCDialog      },
+];
+my($menuTools) = [
 	{ -label => ' Get Status     ', -value => \&getStatusDialog      },
-	{ -label => ' Set Headers    ', -value => \&setHeadersDialog     },
 	{ -label => ' Get Headers    ', -value => \&getHeadersDialog     },
+	{ -label => ' Set Headers    ', -value => \&setHeadersDialog     },
 	{ -label => ' Read Time      ', -value => \&readTimeDialog       },
 	{ -label => ' Set Time       ', -value => \&setTimeDialog        },
 	{ -label => ' Version Info   ', -value => \&versionInfoDialog    },
-	{ -label => ' Display Message', -value => \&displayMessageDialog },
-];
-my($menuUtilities) = [
-	{ -label => ' Browse Invoice      ', -value => \&browseDialog   },
-	{ -label => ' Search Invoices     ', -value => \&browseDialog   },
-	{ -label => ' Validate A,B,C Files', -value => \&validateDialog },
 ];
 my($menuHelp) = [
 	{ -label => ' Help ', -value => \&helpDialog },
 	{ -label => ' About', -value => \&aboutDialog }
 ];
 my($menuBar) = [
-	{ -label => 'File',      -submenu => $menuFile      },
-	{ -label => 'Actions',   -submenu => $menuActions   },
-	{ -label => 'Utilities', -submenu => $menuUtilities },
-	{ -label => 'Help',      -submenu => $menuHelp      }
+	{ -label => 'File',   -submenu => $menuFile  },
+	{ -label => 'Type A', -submenu => $menuTypeA },
+	{ -label => 'Tools',  -submenu => $menuTools },
+	{ -label => 'Help',   -submenu => $menuHelp  }
 ]; 
 
 my($menu) = $cui->add( 'menu', 'Menubar', -menu => $menuBar);
@@ -77,7 +79,7 @@ my($menu) = $cui->add( 'menu', 'Menubar', -menu => $menuBar);
 my($statusBar) = $cui->add( 'statusbar_win', 'Window', -height => 4, -y => -1);
 my($status) = $statusBar->add(
 	'status_text', 'TextViewer',
-	-text		=> " ^X:Menu | OpenEAFDSS Demo Utility",
+	-text		=> " ^X:Menu | OpenEAFDSS Type A *example* Solution Utility",
 	-padtop		=> 2,
 	-width		=> 180,
 	-fg             => 'white',
@@ -92,27 +94,37 @@ $cui->mainloop();
 
 sub exitDialog {
 	my($return) = $cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
 			-message   => "Do you really want to quit?",
-			-title     => "[ Are you sure? ]", 
+			-title     => "[ EXIT ]", 
 			-buttons   => ['yes', 'no'],
 		);
 	exit(0) if $return;
 }
 
 sub issueReportDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+	my($dh) = loadDriverHandle();
 
-	my($reply, $z) = $FD->Report();
-	if ($reply == 0) {
+	my($result) = $dh->Report();
+	if ($result) {
 		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
 			-title => "Z Report",
-			-message => $z
+			-message => $result
 		);
 	} else {
-		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
 		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
 			-title => "Error producing Z report",
-			-message => $curError 
+			-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
 		)
 	}
 }
@@ -122,7 +134,7 @@ sub settingsDialog {
 		'winSettings', 'Window',
 		-title		=> 'Device Settings',
 		-width          => 60,
-		-height         => 24,
+		-height         => 23,
 		-border         => 1,
 		-padtop         => 2,
 		-padbottom      => 2,
@@ -131,68 +143,84 @@ sub settingsDialog {
 		-ipad           => 1
 	);
 
-	my($lblDeviceID) = $winSettings->add(
-		"lDeviceID", "Label", -text   => "    Device ID: ",
+	my($driverIndex) = 1;
+	if ($DRIVER eq 'SDNP')  { $driverIndex = 1 };
+	if ($DRIVER eq 'SDSP')  { $driverIndex = 2 };
+	if ($DRIVER eq 'Dummy') { $driverIndex = 3 };
+
+	my($lblDRIVER) = $winSettings->add(
+		"lDRIVER", "Label", -text   => "      Driver Type: ",
 		-x      => 2, -y      => 1,
 		-height => 1, -width  => 20,
 		-maxlength => 11, -textalignment => 'right',
 	);
-	my($txtDeviceID) = $winSettings->add(
-		"DeviceID", "TextEntry", -text   => $curDeviceID,
-		-fg     => 'black', -bg     => 'cyan',
+	my($boxDRIVER) = $winSettings->add(
+		"boxDRIVER", "Listbox", 
+		-values    => ['SDNP', 'SDSP', 'Dummy'],
+		-labels    => { 1 => 'Micrelec Network', 
+				2 => 'Micrelec Serial', 
+				3 => 'Dummy' },
+		-selected   => $driverIndex,
+		-fg     => 'white', -bg     => 'black',
 		-x      => 25, -y      => 1,
-		-height => 1, -width  => 12,
+		-height => 1, -width  => 20,
 		-maxlength => 11,
 	);
 
-	my($lblSignaturesDir) = $winSettings->add(
-		"lSignaturesDir", "Label", -text   => "Signatures Dir: ",
+	my($lblPARAM) = $winSettings->add(
+		"lPARAM", "Label", -text   => "Driver Parameter: ",
 		-x      => 2, -y      => 3,
 		-height => 1, -width  => 20,
 		-maxlength => 11, -textalignment => 'right',
 	);
-	my($txtSignaturesDir) = $winSettings->add(
-		"SignaturesDir", "TextEntry", -text   => $curSignsDir,
+	my($txtPARAM) = $winSettings->add(
+		"PARAM", "TextEntry", -text   => $PARAM,
 		-fg     => 'black', -bg     => 'cyan',
 		-x      => 25, -y      => 3,
 		-height => 1, -width  => 12,
 		-maxlength => 11,
 	);
 
-	my($lblAddressIP) = $winSettings->add(
-		"lAddressIP", "Label", -text   => "IP Address: ",
-		-x      => 2, -y      => 5,
-		-height => 1, -width  => 20,
+	my($lblSN) = $winSettings->add(
+		"lSN", "Label", -text   => "  Serial Number: ",
+		-x      => 4, -y      => 5,
+		-height => 1, -width  => 18,
 		-maxlength => 11, -textalignment => 'right',
 	);
-	my($txtAddressIP) = $winSettings->add(
-		"AddressIP", "TextEntry", -text   => $curIpAddress,
+	my($txtSN) = $winSettings->add(
+		"SN", "TextEntry", -text   => $SN,
 		-fg     => 'black', -bg     => 'cyan',
 		-x      => 25, -y      => 5,
 		-height => 1, -width  => 12,
 		-maxlength => 11,
 	);
 
-	my($lblDebug) = $winSettings->add(
-		"lDebug", "Label", -text   => "Debug Level: ",
-		-x      => 2, -y      => 7,
+	my($lblABC_DIR) = $winSettings->add(
+		"lABC_DIR", "Label", -text   => "  Signatures Dir: ",
+		-x      => 2, -y      => 8,
 		-height => 1, -width  => 20,
 		-maxlength => 11, -textalignment => 'right',
 	);
-	my($txtDebug) = $winSettings->add(
-		"Debug", "Listbox", 
-		-values    => [0, 1, 2, 3, 4],
-		-labels    => { 0 => 'Off', 
-				1 => 'Info', 
-				2 => 'Verbose', 
-				3 => 'Debug',
-				4 => 'Insane' },
-		-selected   => $curDebug,
-		-fg     => 'white', -bg     => 'black',
-		-radio  => 1,
-		-x      => 25, -y      => 7,
-		-height => 5, -width  => 12,
+	my($txtABC_DIR) = $winSettings->add(
+		"ABC_DIR", "TextEntry", -text   => $ABC_DIR,
+		-fg     => 'black', -bg     => 'cyan',
+		-x      => 25, -y      => 8,
+		-height => 1, -width  => 25,
 		-maxlength => 11,
+	);
+
+	my($lblSQLITE) = $winSettings->add(
+		"lSQLITE", "Label", -text   => "  SQLITE file: ",
+		-x      => 2, -y      => 10,
+		-height => 1, -width  => 20,
+		-maxlength => 40, -textalignment => 'right',
+	);
+	my($txtSQLITE) = $winSettings->add(
+		"SQLITE", "TextEntry", -text   => $SQLITE,
+		-fg     => 'black', -bg     => 'cyan',
+		-x      => 25, -y      => 10,
+		-height => 1, -width  => 25,
+		-maxlength => 40,
 	);
 
 	my($settingsCancel) = sub {
@@ -201,15 +229,19 @@ sub settingsDialog {
 	};
 
 	my($settingsOK) = sub {
-		$curDeviceID = $txtDeviceID->get();
-		$curSignsDir = $txtSignaturesDir->get();
-		$curIpAddress = $txtAddressIP->get(); 
-		$curDebug = $txtDebug->get(); 
+		$ABC_DIR = $txtABC_DIR->get();
+		$SQLITE  = $txtSQLITE->get();
 
-		$cfg->setval("MAIN", 'DeviceID', $curDeviceID);
-		$cfg->setval("MAIN", 'SignsDir', $curSignsDir);
-		$cfg->setval("MAIN", 'ipAdress', $curIpAddress);
-		$cfg->setval("MAIN", 'Debug', $curDebug);
+		$SN      = $txtSN->get();
+		$DRIVER  = $boxDRIVER->get();
+		$PARAM   = $txtPARAM->get();
+
+		$cfg->newval("MAIN", 'ABC_DIR',  $ABC_DIR);
+		$cfg->newval("MAIN", 'SQLITE',   $SQLITE);
+
+		$cfg->newval("DEVICE", 'DRIVER', $DRIVER);
+		$cfg->newval("DEVICE", 'PARAM',  $PARAM);
+		$cfg->newval("DEVICE", 'SN',     $SN);
 		$cfg->RewriteConfig();
 
 		$winSettings->loose_focus();
@@ -237,37 +269,75 @@ sub settingsDialog {
 }
 
 sub getStatusDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
+	my($dh) = loadDriverHandle();
 
-	my($replyCode, $status1, $status2) = $FD->GetStatus();
-	if ($replyCode != 0) {
-		$status1 = "00000000";
-		$status2 = "00000000";
+	my($result) = $dh->Status();
+	if ($result) {
+		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Status",
+			-message => $result
+		);
+	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
+		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Error getting status",
+			-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
+		)
 	}
+}
 
-	my($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery) = $FD->devStatus($status1);
-	my($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull) = $FD->appStatus($status2);
+sub getHeadersDialog {
+	my($dh) = loadDriverHandle();
 
-	$cui->dialog(
-		-title => "Device Status",
-		-message => sprintf("     Reply Code: 0x%02x", $replyCode) . "\n" .
-		            sprintf("  Reply Message: %s",     $FD->errMessage($replyCode)) . "\n\n" .
-		            sprintf("  Device Status: %08b           App Status: %08b", $status1, $status2) . "\n" .
-		            sprintf("  -----------------------           --------------------", $status1, $status2) . "\n" .
-		            sprintf("               Busy: %b                      Day Open: %b", $busy,    $day)        . "\n" .
-		            sprintf("        Fatal error: %b         Signature in progress: %b", $fatal,   $signature)  . "\n" .
-		            sprintf("          Paper end: %b          Recovery in progress: %b", $paper,   $recovery)   . "\n" .
-		            sprintf("         CMOS reset: %b                Fiscal warning: %b", $cmos,    $fiscalWarn) . "\n" .
-		            sprintf("     Printer online: %b               Daily file full: %b", $printer, $dailyFull)  . "\n" .
-		            sprintf("        User access: %b                   Fiscal full: %b", $user,    $fiscalFull) . "\n" .
-		            sprintf("      Fiscal online: %b                                  ", $fiscal) . "\n" .
-		            sprintf("       Battery good: %b                                  ", $battery) 
-	);
+	my(@header) = $dh->GetHeaders();
+	if (@header) {
+		my($i, $header) = (0, "");
+		for ($i=0; $i < 12; $i+=2) {
+			$header .= "  Header #" . ($i/2+1) . " : (" . $header[$i]. ") [" . $header[$i+1] . "]\n";
+		}
+
+		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Get Headers",
+			-message => $header
+		);
+	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
+		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Error getting headers",
+			-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
+		);
+	}
 }
 
 sub setHeadersDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply, @header) = $FD->GetHeader();
+	my($dh) = loadDriverHandle();
+
+	my(@header) = $dh->GetHeaders();
+	if ( ! @header) {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
+		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Error getting headers",
+			-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
+		);
+	}
 
 	my($winSetHeaders) = $cui->add(
 		'winSetHeaders', 'Window',
@@ -325,18 +395,23 @@ sub setHeadersDialog {
 		for ($i=0; $i < 12; $i+=2) {
 			$headersPacked .= sprintf("%s/%s/", $txtFont[$i]->get(), $txtHeader[$i]->get());
 		}
-		my($reply, @header) = $FD->SetHeader($headersPacked);
-		if ($reply == 0) {
+
+		my($result) = $dh->SetHeaders($headersPacked);
+		if ( defined $result && ($result == 0)) {
 			$cui->dialog(
 				-title => "Set Headers",
 				-message => "Headers updated",
 				-x => 30, -y => 20
 			);
 		} else {
-			my($curError, $curFixProposal) = $FD->errMessage($reply);
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
 			$cui->dialog(
-				-title => "Error getting headers",
-				-message => $curError 
+				-fg  => 'cyan', -bg  => 'black',
+				-tfg => 'blue', -tbg => 'cyan',
+				-bfg => 'blue', -bbg => 'black',
+				-title => "Error setting headers",
+				-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
 			);
 		}
 	};
@@ -361,45 +436,112 @@ sub setHeadersDialog {
 	$winSetHeaders->modalfocus();
 }
 
-sub getHeadersDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply, @header) = $FD->GetHeader();
-	if ($reply == 0) {
-		my($i, $header) = (0, "");
-		for ($i=0; $i < 12; $i+=2) {
-			$header .= "  Line #" . ($i/2+1) . " : (" . $header[$i]. ")[" . $header[$i+1] . "]\n";
-		}
+sub readTimeDialog {
+	my($dh) = loadDriverHandle();
 
+	my($result) = $dh->GetTime();
+	if ($result) {
 		$cui->dialog(
-			-title => "Get Headers",
-			-message => $header
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Device time",
+			-message => $result
 		);
 	} else {
-		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
 		$cui->dialog(
-			-title => "Error getting headers",
-			-message => $curError 
-		);
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Error reading time",
+			-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
+		)
 	}
 }
 
-sub readTimeDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply, $devTime) = $FD->ReadTime();
-	if ($reply == 0) {
-		$cui->dialog(
-			-title => "Device Time",
-			-message => $devTime,
-			-x => 30, -y => 20
-		)
-	} else {
-		my($curError, $curFixProposal) = $FD->errMessage($reply);
-		$cui->dialog(
-			-title => "Error reading time",
-			-message => $curError 
-		)
-	}
+sub setTimeDialog {
+	my($dh) = loadDriverHandle();
 
+	my($winSetTime) = $cui->add(
+		'winSetTime', 'Window',
+				-fg  => 'cyan', -bg  => 'black',
+				-tfg => 'blue', -tbg => 'cyan',
+				-bfg => 'blue', -bbg => 'black',
+		-title		=> 'Set Device time',
+		-width          => 60,
+		-height         => 10,
+		-border         => 1,
+		-x => 10, -y => 10,
+	);
+
+	my($lblTime) = $winSetTime->add(
+		"lTime", "Label", -text   => "Enter time in DD/MM/YY HH:MM:SS format",
+		-x      => 2, -y      => 1,
+		-height => 1, -width  => 46,
+		-maxlength => 11, -textalignment => 'right',
+	);
+
+	my($second, $minute, $hour, $dayOfMonth, $month, $yearOffset, $dayOfWeek, $dayOfYear, $daylightSavings) = localtime();
+	my($year) = $yearOffset % 100;
+
+	my($txtTime) = $winSetTime->add(
+		"Time", "TextEntry", -text  => sprintf("%02d/%02d/%02d %02d:%02d:%02d", $dayOfMonth, $month+1, $year, $hour, $minute, $second),
+		-fg     => 'black', -bg     => 'cyan',
+		-x      => 20, -y      => 3,
+		-height => 1, -width  => 22,
+		-maxlength => 18,
+	);
+
+	my($settingsCancel) = sub {
+		$winSetTime->loose_focus();
+		$cui->delete('winSetTime');
+	};
+
+	my($settingsOK) = sub {
+		my($result) = $dh->SetTime($txtTime->get());
+		if ( defined $result && ($result == 0)) {
+			$cui->dialog(
+				-fg  => 'cyan', -bg  => 'black',
+				-tfg => 'blue', -tbg => 'cyan',
+				-bfg => 'blue', -bbg => 'black',
+				-title => "Device time",
+				-message => "Time successfully set"
+			);
+			$winSetTime->loose_focus();
+			$cui->delete('winSetTime');
+		} else {
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
+			$cui->dialog(
+				-fg  => 'cyan', -bg  => 'black',
+				-tfg => 'blue', -tbg => 'cyan',
+				-bfg => 'blue', -bbg => 'black',
+				-title => "Error setting time",
+				-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
+			)
+		}
+	};
+
+	my($btnBox) = $winSetTime->add(
+		"btnBox", "Buttonbox" ,
+		-y => -2,
+		-buttons => [
+			{ -label    => '< OK >',
+			  -shortcut => 'o',
+			  -value    => 1,
+			  -onpress  => $settingsOK },
+			{ -label    => '< Cancel >',
+			  -shortcut => 'c',
+			  -value    => 0,
+			  -onpress  => $settingsCancel}
+		],
+		-buttonalignment => 'middle'
+	);
+
+	$btnBox->focus();
+	$winSetTime->modalfocus();
 }
 
 sub readDeviceIdDialog {
@@ -426,103 +568,32 @@ sub readDeviceIdDialog {
 }
 
 sub versionInfoDialog {
-	my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-	my($reply, $version) = $FD->VersionInfo();
-	if ($reply == 0) {
+	my($dh) = loadDriverHandle();
+
+	my($result) = $dh->Info();
+	if ($result) {
 		$cui->dialog(
-			-title => "Device Info",
-			-message => $version,
-			-x => 30, -y => 20
-		)
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Device info",
+			-message => $result
+		);
 	} else {
-		my($curError, $curFixProposal) = $FD->errMessage($reply);
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
 		$cui->dialog(
-			-title => "Error reading version info",
-			-message => $curError 
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Error Reading version info",
+			-message => sprintf("ERROR [0x%02X]: %s\n", $errNo, $errMsg)
 		)
 	}
 }
 
-sub displayMessageDialog {
-	my($winDisplayMessage) = $cui->add(
-		'winDisplayMessage', 'Window',
-		-title		=> 'Display Message',
-		-width          => 70,
-		-height         => 14,
-		-border         => 1,
-		-padtop         => 2,
-		-padbottom      => 2,
-		-padleft        => 2,
-		-padright       => 2,
-		-ipad           => 1,
-	);
-
-	my($lblMessage) = $winDisplayMessage->add(
-		"lMessage", "Label", -text   => "Device Message: ",
-		-x      => 2, -y      => 1,
-		-height => 1, -width  => 20,
-	);
-	my($txtMessage) = $winDisplayMessage->add(
-		"Message", "TextEntry", -text   => "OpenEAFDSS",
-		-fg     => 'black', -bg     => 'cyan',
-		-x      => 2, -y      => 2,
-		-height => 1, -width  => 50,
-		-maxlength => 50,
-	);
-
-	my($displayMessageCancel) = sub {
-		$winDisplayMessage->loose_focus();
-		$cui->delete('winDisplayMessage');
-	};
-
-	my($displayMessageOK) = sub {
-		$winDisplayMessage->loose_focus();
-		$cui->delete('winDisplayMessage');
-
-		my($FD) = new EAFDSS::SDNP(DIR => $curSignsDir, SN => $curDeviceID, IP => $curIpAddress);
-		my($reply, $version) = $FD->DisplayMessage($txtMessage->get());
-		if ($reply == 0) {
-			$cui->dialog(
-				-title => "Device Message",
-				-message => "Message Sent",
-				-x => 30, -y => 20
-			)
-		} else {
-			my($curError, $curFixProposal) = $FD->errMessage($reply);
-			$cui->dialog(
-				-title => "Error reading version info",
-				-message => $curError 
-			)
-		}
-	};
-
-	my($btnBox) = $winDisplayMessage->add(
-		"btnBox", "Buttonbox" ,
-		-y => -1,
-		-buttons => [
-			{ -label    => '< OK >',
-			  -shortcut => 'o',
-			  -value    => 1,
-			  -onpress  => $displayMessageOK},
-			{ -label    => '< Cancel >',
-			  -shortcut => 'c',
-			  -value    => 0,
-			  -onpress  => $displayMessageCancel}
-		],
-		-buttonalignment => 'middle'
-	);
-
-	$btnBox->focus();
-	$winDisplayMessage->modalfocus();
-}
-
 sub loadDriverHandle {
-	my($dh) = new EAFDSS(
-			"DRIVER" => "EAFDSS::SDNP::" . $curIpAddress,
-			"SN"     => $curDeviceID,
-			"DIR"    => $curSignsDir,
-			"DEBUG"  => 0
-		);
+	my($dh) = new EAFDSS(DRIVER => "EAFDSS::${DRIVER}::${PARAM}", SN => $SN, DIR => $ABC_DIR);
 
 	if (! $dh) {
 		$cui->dialog("ERROR: " . EAFDSS->error());
@@ -532,27 +603,58 @@ sub loadDriverHandle {
 	return $dh;
 }
 
-sub browseDialog {
-	$cui->dialog("TODO");
+sub browseInvoiceDialog {
+	$cui->dialog(
+		-fg  => 'cyan', -bg  => 'black',
+		-tfg => 'blue', -tbg => 'cyan',
+		-bfg => 'blue', -bbg => 'black',
+		-title => "Help",
+		-message =>
+			"This will browse one by one previously signed invoices" . "\n"
+	);
 }
 
-sub validateDialog {
-	$cui->dialog("TODO");
+sub searchInvoiceDialog {
+	$cui->dialog(
+		-fg  => 'cyan', -bg  => 'black',
+		-tfg => 'blue', -tbg => 'cyan',
+		-bfg => 'blue', -bbg => 'black',
+		-title => "Help",
+		-message =>
+			"This will search for previously signed invoices" . "\n"
+	);
 }
 
-sub checkDialog {
-	$cui->dialog("TODO");
+sub checkABCDialog {
+	$cui->dialog(
+		-fg  => 'cyan', -bg  => 'black',
+		-tfg => 'blue', -tbg => 'cyan',
+		-bfg => 'blue', -bbg => 'black',
+		-title => "Help",
+		-message =>
+			"This will check validity of the A, B, C files" . "\n"
+	);
 }
 
 sub helpDialog {
-	$cui->dialog("TODO");
+	$cui->dialog(
+		-fg  => 'cyan', -bg  => 'black',
+		-tfg => 'blue', -tbg => 'cyan',
+		-bfg => 'blue', -bbg => 'black',
+		-title => "Help",
+		-message =>
+			"For the moment just read the man page of EAFDSS" . "\n"
+	);
 }
 
 sub aboutDialog {
 	$cui->dialog(
+		-fg  => 'cyan', -bg  => 'black',
+		-tfg => 'blue', -tbg => 'cyan',
+		-bfg => 'blue', -bbg => 'black',
 		-title => "About OpenEAFDSS",
 		-message =>
-			"OpenEAFDSS ver 0.10 -- Copyright (C) 2008 by Hasiotis Nikos          " . "\n" .
+			"OpenEAFDSS ver 0.39_01 -- Copyright (C) 2008 by Hasiotis Nikos       " . "\n" .
 			"                                                                     " . "\n" .
 			"This program is free software: you can redistribute it and/or modify " . "\n" .
 			"it under the terms of the GNU General Public License as published by " . "\n" .
