@@ -33,18 +33,26 @@ my(%progie) = ( name      => 'OpenEAFDSS-TypeA-Filter.pl',
                 copyright => 'Copyright (c) 2008 Hasiotis Nikos, all rights reserved',
                 version   => '0.39_01');
 
-sub main {
-	my($job_id, $user, $job_name, $copies, $options, $fname);
+our($debug) = 1;
 
+sub main {
+	my($job_id, $user, $job_name, $copies, $options, $fname, $sandbox);
+
+	$sandbox = sprintf("%s/OpenEAFDSS-TMP-%s", $ENV{'TMPDIR'}, $$);
 	if ($#ARGV < 5) {
-		$fname = "-";
-		printf(STDERR "INFO: Signing STDIN\n");
+		umask(077);
+		if (! mkdir($sandbox) ) {
+			printf(STDERR "ERROR: [OpenEAFDSS] Cannot create temporary directory [%s]! Exiting\n", $sandbox);
+			exit 1;
+		}
+		$fname = sprintf("%s/JOB-TEMP-FILE-01", $sandbox); 
+		printf(STDERR "NOTICE: [OpenEAFDSS] (STDIN) Signing file [%s]\n", $fname);
 	} else {
 		($job_id, $user, $job_name, $copies, $options, $fname) = @ARGV;
-		printf(STDERR "INFO: Signing file [%s]\n", $fname);
+		printf(STDERR "NOTICE: [OpenEAFDSS] Signing file [%s]\n", $fname);
 	}
 
-	my($cfg) = Config::IniFiles->new(-file => "OpenEAFDSS-TypeA.ini", -nocase => 1);
+	my($cfg) = Config::IniFiles->new(-file => "/etc/OpenEAFDSS/OpenEAFDSS-TypeA.ini", -nocase => 1);
 
 	my($ABC_DIR) = $cfg->val('MAIN', 'ABC_DIR', '/tmp/signs');
 	my($SQLITE)  = $cfg->val('MAIN', 'SQLITE', '/tmp/eafdss.sqlite');
@@ -57,20 +65,33 @@ sub main {
 			"DRIVER" => "EAFDSS::" . $DRIVER . "::" . $PARAM,
 			"SN"     => $SN,
 			"DIR"    => $ABC_DIR,
+			"DEBUG"  => $debug
 		);
 
 	if (! $dh) {
-		print("ERROR: " . EAFDSS->error() ."\n");
-		exit -1;
+		print(STDERR "ERROR: [OpenEAFDSS]" . EAFDSS->error() ."\n");
+		exit 1;
 	}
   
 	my($signature) = $dh->Sign($fname);
 	if (! $signature) {
 		my($errNo)  = $dh->error();
 		my($errMsg) = $dh->errMessage($errNo);
-		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		printf(STDERR "ERROR: [OpenEAFDSS] [0x%02X] %s\n", $errNo, $errMsg);
 		exit($errNo);
+	} else {
+		printf(STDERR "NOTICE: [OpenEAFDSS] Got sign [%s]\n", $signature);
 	}
+
+	open(FH, "<", $fname) || exit;
+	while (<FH>) {
+		print $_;
+	};
+	close(FH);
+
+	printf(" %s \n", $signature);
+
+	rmdir($sandbox);
 }
 
 main();
