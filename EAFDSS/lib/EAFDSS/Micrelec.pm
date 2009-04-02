@@ -25,7 +25,7 @@ sub PROTO_DetailSign {
 	my($reply, $totalSigns, $dailySigns, $date, $time, $sign) = $self->GetSign($fh);
 
 	if ($reply == 0) {
-		return ($reply, sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN}));
+		return (hex($reply), sprintf("%s %04d %08d %s%s %s", $sign, $dailySigns, $totalSigns, $self->date6ToHost($date), substr($time, 0, 4), $self->{SN}));
 	} else {
 		return (-1);
 	}
@@ -38,15 +38,15 @@ sub PROTO_Query{
 	my($replyCode, $devices) = $self->_sdnpQuery();
 
 	if (! $replyCode) {
-		return ($replyCode, $devices);
+		return (hex($replyCode), $devices);
 	} else {
 		return ($self->error());
 	}
 }
 
 sub PROTO_GetSign {
-	my($self) = shift @_;
-	my($fh)   = shift @_;
+	my($self)    = shift @_;
+	my($invoice) = shift @_;
 
 	my($chunk, %reply);
 	$self->debug("  [PROTO] Get Sign");
@@ -61,7 +61,7 @@ sub PROTO_GetSign {
 		$reply{OPCODE} = 0x22;
 	}
 	if ( %reply && ($reply{OPCODE} == 0x22) ) {
-		while (read($fh, $chunk, 400)) {
+		foreach $chunk (unpack('(A400)*', $invoice)) {
 			my(%reply) = $self->SendRequest(0x21, 0x00, "@/$chunk");
 		}
 		%reply = $self->SendRequest(0x21, 0x00, "}");
@@ -69,7 +69,7 @@ sub PROTO_GetSign {
 
 	if (%reply) { 
 		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $nextZ) = split(/\//, $reply{DATA});
-		return ($replyCode, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign);
+		return (hex($replyCode), $totalSigns, $dailySigns, $date, $time, $nextZ, $sign);
 	} else {
 		return (-1);
 	}

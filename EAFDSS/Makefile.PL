@@ -1,4 +1,4 @@
-use 5.006001;
+use 5.6.0;
 use strict;
 use warnings;
 use ExtUtils::MakeMaker qw( WriteMakefile prompt );

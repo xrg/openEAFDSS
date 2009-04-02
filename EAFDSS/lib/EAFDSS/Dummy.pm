@@ -52,17 +52,12 @@ sub init {
 }
 
 sub PROTO_GetSign {
-	my($self) = shift @_;
-	my($fh)   = shift @_;
+	my($self)    = shift @_;
+	my($invoice) = shift @_;
 
 	my($replyCode, $totalSigns, $dailySigns, $date, $time, $sign, $nextZ, $maxFiscal, $maxSigns);
 
 	$self->debug("  [PROTO] Get Sign");
-
-	my($data, $chunk) = ("", "");
-	while (read($fh, $chunk, 400)) {
-		$data .= $chunk;
-	}
 
 	my($sec, $min, $hour, $mday, $mon, $year) = localtime();
 	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
@@ -84,9 +79,9 @@ sub PROTO_GetSign {
 	$dummy->newval('MAIN', 'TOTAL_SIGN', $totalSigns + 1);
 	$dummy->newval('MAIN', 'CUR_SIGN', $dailySigns + 1);
 
-	$data .= sprintf("%s%08d%04d%s%s", $self->{SN}, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time));
+	$invoice .= sprintf("%s%08d%04d%s%s", $self->{SN}, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time));
 
-	$sign = uc(sha1_hex($data));
+	$sign = uc(sha1_hex($invoice));
 	$dummy->newval('SIGNS', $dailySigns,  $sign);
 
 	$dummy->RewriteConfig();

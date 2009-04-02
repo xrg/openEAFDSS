@@ -89,6 +89,7 @@ sub cmdReport() {
 		exit($errNo);
 	}
 }
+
 sub cmdStatus() {
 	my($dh) = shift @_;
 
