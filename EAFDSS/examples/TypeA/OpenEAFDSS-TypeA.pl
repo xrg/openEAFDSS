@@ -604,6 +604,20 @@ sub loadDriverHandle {
 	return $dh;
 }
 
+sub reprintInvoice {
+	my($text) = shift @_;
+	my($sign) = shift @_;
+
+	my($tmp_fname) = "/tmp/reprint-eafdsss.$$";
+	open(FH, ">", $tmp_fname) || die "Error opening file $tmp_fname";
+	printf(FH $text);
+	close(FH);
+
+	system(sprintf('lp -d PDF -o "eafddssreprint=%s" %s', $sign, $tmp_fname));
+	
+	unlink($tmp_fname);
+}
+
 sub browseInvoiceDialog {
 	my($winBrowseInvoices) = $cui->add(
 		'winBrowseInvoices', 'Window',
@@ -643,14 +657,15 @@ sub browseInvoiceDialog {
 		$cui->delete('winBrowseInvoices');
 	}
 
-	my($invoices, $invoices_text, $keys, $ref);
-	my($sth) = $dbh->prepare("SELECT id, tm, job_name, text FROM invoices;");
+	my($invoices, $invoices_text, $invoices_signature, $keys, $ref);
+	my($sth) = $dbh->prepare("SELECT id, tm, signature, job_name, text FROM invoices;");
 	my($rv) = $sth->execute;
 	while ( $ref = $sth->fetchrow_hashref() ) 
 	{
 		push(@$keys, $$ref{'id'});
 		$invoices->{$$ref{'id'}} = $$ref{'id'} . ". " . $$ref{'job_name'} . " -- ( Date: " .  $$ref{'tm'}. " )";
 		$invoices_text->{$$ref{'id'}} = $$ref{'text'};
+		$invoices_signature->{$$ref{'id'}} = $$ref{'signature'};
 	}
 
 	my($lbInvoice) = $winBrowseInvoices->add(
@@ -714,6 +729,7 @@ sub browseInvoiceDialog {
 				  -shortcut => 'p',
 				  -value    => 0,
 				  -onpress  => sub {
+							reprintInvoice($invoices_text->{$lbInvoice->get()}, $invoices_signature->{$lbInvoice->get()});
 							$winInvoice->loose_focus();
 							$cui->delete('winInvoice');
 							$winBrowseInvoices->focus();

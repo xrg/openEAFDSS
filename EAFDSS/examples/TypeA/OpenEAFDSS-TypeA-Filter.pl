@@ -88,34 +88,48 @@ sub main {
 		exit 1;
 	}
 
-	my($dh) = new EAFDSS(
-			"DRIVER" => "EAFDSS::" . $DRIVER . "::" . $PARAM,
-			"SN"     => $SN,
-			"DIR"    => $ABC_DIR,
-			"DEBUG"  => $debug
-		);
-
-	if (! $dh) {
-		print(STDERR "ERROR: [OpenEAFDSS]" . EAFDSS->error() ."\n");
-		exit 1;
-	}
-  
-	my($signature) = $dh->Sign($fname);
-	if (! $signature) {
-		my($errNo)  = $dh->error();
-		my($errMsg) = $dh->errMessage($errNo);
-		printf(STDERR "ERROR: [OpenEAFDSS] [0x%02X] %s\n", $errNo, $errMsg);
-		exit($errNo);
+	my($reprint, $signature);
+	if ( $options =~ m/eafddssreprint/ ) {
+		$options =~ /eafddssreprint=(.*) /;
+		$reprint = $1;
 	} else {
-		printf(STDERR "NOTICE: [OpenEAFDSS] Got sign [%s]\n", $signature);
+		$reprint = 0;
+	}
+
+	if ($reprint) {
+		$signature = $reprint;
+	} else {
+		my($dh) = new EAFDSS(
+				"DRIVER" => "EAFDSS::" . $DRIVER . "::" . $PARAM,
+				"SN"     => $SN,
+				"DIR"    => $ABC_DIR,
+				"DEBUG"  => $debug
+			);
+
+		if (! $dh) {
+			print(STDERR "ERROR: [OpenEAFDSS]" . EAFDSS->error() ."\n");
+			exit 1;
+		}
+  
+		$signature = $dh->Sign($fname);
+		if (! $signature) {
+			my($errNo)  = $dh->error();
+			my($errMsg) = $dh->errMessage($errNo);
+			printf(STDERR "ERROR: [OpenEAFDSS] [0x%02X] %s\n", $errNo, $errMsg);
+			exit($errNo);
+		} else {
+			printf(STDERR "NOTICE: [OpenEAFDSS] Got sign [%s]\n", $signature);
+		}
 	}
 
 	open(FH, $fname);
 	my($invoice) = do { local($/); <FH> };
 	close(FH);
 
-	$dbh->do("INSERT INTO invoices (tm,  job_id, user, job_name, copies, options, signature, text) " . 
+	unless ($reprint) {
+		$dbh->do("INSERT INTO invoices (tm,  job_id, user, job_name, copies, options, signature, text) " . 
 			" VALUES ( date('now'), '$job_id', '$user', '$job_name', '$copies', '$options', '$signature', '$invoice');" );
+	}
 
 	$dbh->disconnect();
 
