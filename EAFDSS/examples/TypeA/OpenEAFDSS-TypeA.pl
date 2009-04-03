@@ -25,10 +25,11 @@ use strict;
 use Config::IniFiles;
 use Data::Dumper;
 use Curses::UI;
+use DBI;
 use EAFDSS; 
 
 
-my($cfg) = Config::IniFiles->new(-file => "OpenEAFDSS-TypeA.ini", -nocase => 1);
+my($cfg) = Config::IniFiles->new(-file => "/etc/OpenEAFDSS/OpenEAFDSS-TypeA.ini", -nocase => 1);
 
 my($ABC_DIR) = $cfg->val('MAIN', 'ABC_DIR', '/tmp/signs');
 my($SQLITE)  = $cfg->val('MAIN', 'SQLITE', '/tmp/eafdss.sqlite');
@@ -604,14 +605,146 @@ sub loadDriverHandle {
 }
 
 sub browseInvoiceDialog {
-	$cui->dialog(
+	my($winBrowseInvoices) = $cui->add(
+		'winBrowseInvoices', 'Window',
+		-title		=> 'Browse Invoices',
+		-width          => 74,
+		-height         => 22,
+		-border         => 1,
+		-padtop         => 2,
+		-padbottom      => 2,
+		-padleft        => 2,
+		-padright       => 2,
+		-ipad           => 1,
 		-fg  => 'cyan', -bg  => 'black',
 		-tfg => 'blue', -tbg => 'cyan',
 		-bfg => 'blue', -bbg => 'black',
-		-title => "Help",
-		-message =>
-			"This will browse one by one previously signed invoices" . "\n"
 	);
+	
+	my($dbh);
+	if ( -e $SQLITE) {
+		$dbh = DBI->connect("dbi:SQLite:dbname=$SQLITE","","");
+	} else {
+		$dbh = DBI->connect("dbi:SQLite:dbname=$SQLITE","","");
+		if ($dbh)  {
+			$dbh->do("CREATE TABLE invoices" . 
+				" (id INTEGER PRIMARY KEY, tm,  job_id, user, job_name, copies, options, signature, text);" );
+		}
+	}
+	unless ($dbh)  {
+		$cui->dialog(
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+			-title => "Error",
+			-message => "Error opening SQLite DB" 
+		);
+		$winBrowseInvoices->loose_focus();
+		$cui->delete('winBrowseInvoices');
+	}
+
+	my($invoices, $invoices_text, $keys, $ref);
+	my($sth) = $dbh->prepare("SELECT id, tm, job_name, text FROM invoices;");
+	my($rv) = $sth->execute;
+	while ( $ref = $sth->fetchrow_hashref() ) 
+	{
+		push(@$keys, $$ref{'id'});
+		$invoices->{$$ref{'id'}} = $$ref{'id'} . ". " . $$ref{'job_name'} . " -- ( Date: " .  $$ref{'tm'}. " )";
+		$invoices_text->{$$ref{'id'}} = $$ref{'text'};
+	}
+
+	my($lbInvoice) = $winBrowseInvoices->add(
+		"lbInvoice", "Listbox", 
+		-values    => $keys,
+		-labels    => $invoices,
+		-fg     => 'white', -bg     => 'black',
+		-x      => 1, -y      => 1,
+		-height => 10, -width  => 64,
+		-maxlength => 60,
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+	);
+
+	my($browseInvoiceCancel) = sub {
+		$winBrowseInvoices->loose_focus();
+		$cui->delete('winBrowseInvoices');
+	};
+
+	my($browseInvoiceOK) = sub {
+		my($winInvoice) = $cui->add(
+			'winInvoice', 'Window',
+			-title		=> 'View Invoice',
+			-width          => 74,
+			-height         => 22,
+			-border         => 1,
+			-padtop         => 2,
+			-padbottom      => 2,
+			-padleft        => 2,
+			-padright       => 2,
+			-ipad           => 1,
+			-centered       => 1,
+			-fg  => 'cyan', -bg  => 'black',
+			-tfg => 'blue', -tbg => 'cyan',
+			-bfg => 'blue', -bbg => 'black',
+		);
+		my($viewInvoice) = $winInvoice->add( 
+			'viewInvoice', 'TextViewer',
+			-vscrollbar     => 1,
+			-wrapping       => 1,
+			-width          => 74,
+			-height         => 10,
+			-text => $invoices_text->{$lbInvoice->get()}
+		);
+
+		my($btnBox) = $winInvoice->add(
+			"btnBox", "Buttonbox" ,
+			-y => -1,
+			-buttons => [
+				{ -label    => '< OK >',
+				  -shortcut => 'o',
+				  -value    => 1,
+				  -onpress  =>  sub {
+							$winInvoice->loose_focus();
+							$cui->delete('winInvoice');
+							$winBrowseInvoices->focus();
+							$winBrowseInvoices->modalfocus();
+        					},
+				},
+				{ -label    => '< RePrint>',
+				  -shortcut => 'p',
+				  -value    => 0,
+				  -onpress  => sub {
+							$winInvoice->loose_focus();
+							$cui->delete('winInvoice');
+							$winBrowseInvoices->focus();
+							$winBrowseInvoices->modalfocus();
+						}
+				}
+			],
+			-buttonalignment => 'middle'
+		);
+
+		$winInvoice->modalfocus();
+	};
+
+	my($btnBox) = $winBrowseInvoices->add(
+		"btnBox", "Buttonbox" ,
+		-y => -1,
+		-buttons => [
+			{ -label    => '< OK >',
+			  -shortcut => 'o',
+			  -value    => 1,
+			  -onpress  => $browseInvoiceOK},
+			{ -label    => '< Cancel >',
+			  -shortcut => 'c',
+			  -value    => 0,
+			  -onpress  => $browseInvoiceCancel}
+		],
+		-buttonalignment => 'middle'
+	);
+
+	$winBrowseInvoices->focus();
+	$winBrowseInvoices->modalfocus();
 }
 
 sub searchInvoiceDialog {

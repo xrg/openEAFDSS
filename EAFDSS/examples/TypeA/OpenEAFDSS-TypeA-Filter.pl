@@ -31,14 +31,18 @@ use Config::IniFiles;
 my(%progie) = ( name      => 'OpenEAFDSS-TypeA-Filter.pl',
                 author    => 'Nikos Hasiotis (hasiotis@gmail.com)',
                 copyright => 'Copyright (c) 2008 Hasiotis Nikos, all rights reserved',
-                version   => '0.40');
+                version   => '0.39_01');
 
 our($debug) = 1;
 
 sub main {
 	my($job_id, $user, $job_name, $copies, $options, $fname, $sandbox);
 
+	unless ( defined $ENV{'TMPDIR'} ) {
+		$ENV{'TMPDIR'} = "/tmp";
+	}
 	$sandbox = sprintf("%s/OpenEAFDSS-TMP-%s", $ENV{'TMPDIR'}, $$);
+
 	if ($#ARGV < 5) {
 		umask(077);
 		if (! mkdir($sandbox) ) {
@@ -47,6 +51,14 @@ sub main {
 		}
 		$fname = sprintf("%s/JOB-TEMP-FILE-01", $sandbox); 
 		printf(STDERR "NOTICE: [OpenEAFDSS] (STDIN) Signing file [%s]\n", $fname);
+
+		open(FIN, "<-") || die "Error Opening STDIN ($!)";
+		open(FOUT, ">", $fname) || die "Error Opening TMPFILE ($!)";
+		while (<FIN>) { printf(FOUT $_) };
+		close(FOUT);
+		close(FIN);
+
+		($job_id, $user, $job_name, $copies, $options) = ('', '', '', '', '');
 	} else {
 		($job_id, $user, $job_name, $copies, $options, $fname) = @ARGV;
 		printf(STDERR "NOTICE: [OpenEAFDSS] Signing file [%s]\n", $fname);
@@ -60,6 +72,21 @@ sub main {
 	my($SN)      = $cfg->val('DEVICE', 'SN', 'ABC02000001');
 	my($DRIVER)  = $cfg->val('DEVICE', 'DRIVER', 'SDNP');
 	my($PARAM)   = $cfg->val('DEVICE', 'PARAM', 'localhost');
+
+	my($dbh);
+	if ( -e $SQLITE) {
+		$dbh = DBI->connect("dbi:SQLite:dbname=$SQLITE","","");
+	} else {
+		$dbh = DBI->connect("dbi:SQLite:dbname=$SQLITE","","");
+		if ($dbh)  {
+			$dbh->do("CREATE TABLE invoices" . 
+				" (id INTEGER PRIMARY KEY, tm,  job_id, user, job_name, copies, options, signature, text);" );
+		}
+	}
+	unless ($dbh)  {
+		printf(STDERR "ERROR: [OpenEAFDSS] Cannot connect to sqlite db [%s]! Exiting\n", $SQLITE);
+		exit 1;
+	}
 
 	my($dh) = new EAFDSS(
 			"DRIVER" => "EAFDSS::" . $DRIVER . "::" . $PARAM,
@@ -83,10 +110,17 @@ sub main {
 		printf(STDERR "NOTICE: [OpenEAFDSS] Got sign [%s]\n", $signature);
 	}
 
+	open(FH, $fname);
+	my($invoice) = do { local($/); <FH> };
+	close(FH);
+
+	$dbh->do("INSERT INTO invoices (tm,  job_id, user, job_name, copies, options, signature, text) " . 
+			" VALUES ( date('now'), '$job_id', '$user', '$job_name', '$copies', '$options', '$signature', '$invoice');" );
+
+	$dbh->disconnect();
+
 	open(FH, "<", $fname) || exit;
-	while (<FH>) {
-		print $_;
-	};
+	while (<FH>) { print $_; };
 	close(FH);
 
 	printf(" %s \n", $signature);
