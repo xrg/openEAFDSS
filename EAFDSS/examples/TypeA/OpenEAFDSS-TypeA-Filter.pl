@@ -126,9 +126,14 @@ sub main {
 	my($invoice) = do { local($/); <FH> };
 	close(FH);
 
-	unless ($reprint) {
-		$dbh->do("INSERT INTO invoices (tm,  job_id, user, job_name, copies, options, signature, text) " . 
-			" VALUES ( date('now'), '$job_id', '$user', '$job_name', '$copies', '$options', '$signature', '$invoice');" );
+	if ($reprint == 0) {
+		$invoice =~ s/'/''/g;
+
+		my($insert) = "INSERT INTO invoices (tm,  job_id, user, job_name, copies, options, signature, text) " . 
+                        " VALUES ( date('now'), '$job_id', '$user', '$job_name', '$copies', '$options', '$signature', '$invoice');";
+
+		print $insert;
+		$dbh->do($insert) or die("NOTICE: [OpenEAFDSS] Insert Error [%s]\n", $dbh->errstr);
 	}
 
 	$dbh->disconnect();
