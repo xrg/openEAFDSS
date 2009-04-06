@@ -1,12 +1,13 @@
 use strict;
 use warnings;
 use Test::More qw(no_plan);
+use File::Path;
 use EAFDSS;
 
-my($sdir)    = "/tmp/signs-testing";
+my($sdir)    = "./signs-testing";
 my($sn)      = 'ABC02000001';
-my($prm)     = '/tmp/dummy.eafdss';
-my($invoice) = "/tmp/invoice.txt";
+my($prm)     = './dummy.eafdss';
+my($invoice) = "./invoice.txt";
 
 rmdir($sdir);
 mkdir($sdir);
@@ -26,6 +27,9 @@ my($result);
 $result = $dh->Status();
 ok($result,  "Operation STATUS");
 
+$result = $dh->Report();
+ok($result, "Operation REPORT");
+
 $result = $dh->GetTime();
 ok($result, "Operation GET TIME");
 
@@ -40,10 +44,8 @@ $result = $dh->Sign($invoice);
 ok($result, "Operation SIGN");
 
 unlink($invoice);
+unlink($prm);
 
-$result = $dh->Report();
-ok($result, "Operation REPORT");
-
-rmdir($sdir);
+rmtree($sdir);
 
 exit;

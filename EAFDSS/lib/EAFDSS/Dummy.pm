@@ -7,7 +7,17 @@
 
 package EAFDSS::Dummy;
 
-use 5.006001;
+=head1 NAME
+
+EAFDSS::Dummy - EAFDSS Driver for a Dummy filesystem based device 
+
+=head1 DESCRIPTION
+
+Read EAFDSS on how to use the module.
+
+=cut
+
+use 5.6.0;
 use strict;
 use warnings;
 use Carp;
@@ -19,6 +29,14 @@ use Config::IniFiles;
 use base qw ( EAFDSS::Base );
 
 our($VERSION) = '0.40';
+
+=head1 Methods
+
+=head2 init
+
+init
+
+=cut
 
 sub init {
 	my($class)  = shift @_;
@@ -50,6 +68,14 @@ sub init {
 
 	return $self;
 }
+
+=head1 Methods
+
+=head2 PROTO_GetSign
+
+PROTO_GetSign  
+
+=cut
 
 sub PROTO_GetSign {
 	my($self)    = shift @_;
@@ -89,6 +115,12 @@ sub PROTO_GetSign {
 	return (0, $totalSigns, $dailySigns, $date, $time, $nextZ, $sign);
 }
 
+=head2 PROTO_SetHeader
+
+PROTO_SetHeader
+
+=cut
+
 sub PROTO_SetHeader {
 	my($self)    = shift @_;
 	my($headers) = shift @_;
@@ -96,6 +128,12 @@ sub PROTO_SetHeader {
 	$self->debug("  [PROTO] Set Headers");
 	return 64+04;
 }
+
+=head2 PROTO_GetStatus
+
+PROTO_GetStatus
+
+=cut
 
 sub PROTO_GetStatus {
 	my($self) = shift @_;
@@ -108,12 +146,24 @@ sub PROTO_GetStatus {
 	}
 }
 
+=head2 PROTO_GetHeader
+
+PROTO_GetHeader
+
+=cut
+
 sub PROTO_GetHeader {
 	my($self) = shift @_;
 
 	$self->debug("  [PROTO] Get Headers");
 	return 64+04;
 }
+
+=head2 PROTO_ReadTime
+
+PROTO_ReadTime
+
+=cut
 
 sub PROTO_ReadTime {
 	my($self) = shift @_;
@@ -123,6 +173,12 @@ sub PROTO_ReadTime {
 	return (0, sprintf("%02d/%02d/%02d %02d:%02d:%02d", $mday, $mon+1, $year-100, $hour, $min, $sec));
 }
 
+=head2 PROTO_SetTime
+
+PROTO_SetTime
+
+=cut
+
 sub PROTO_SetTime {
 	my($self) = shift @_;
 	my($time) = shift @_;
@@ -130,6 +186,12 @@ sub PROTO_SetTime {
 	$self->debug("  [PROTO] Set Time");
 	return 64+04;
 }
+
+=head2 PROTO_ReadDeviceID
+
+PROTO_ReadDeviceID
+
+=cut
 
 sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
@@ -145,6 +207,12 @@ sub PROTO_ReadDeviceID {
 	}
 }
 
+=head2 PROTO_VersionInfo
+
+PROTO_VersionInfo
+
+=cut
+
 sub PROTO_VersionInfo {
 	my($self) = shift @_;
 
@@ -158,6 +226,12 @@ sub PROTO_VersionInfo {
 		return (-1);
 	}
 }
+
+=head2 PROTO_ReadSignEntry
+
+PROTO_ReadSignEntry
+
+=cut
 
 sub PROTO_ReadSignEntry {
 	my($self)  = shift @_;
@@ -173,6 +247,12 @@ sub PROTO_ReadSignEntry {
 		return (-1);
 	}
 }
+
+=head2 PROTO_ReadClosure
+
+PROTO_ReadClosure
+
+=cut
 
 sub PROTO_ReadClosure {
 	my($self)  = shift @_;
@@ -200,6 +280,12 @@ sub PROTO_ReadClosure {
 	return (0, 1, 1, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $z, $self->{SN}, $closure);
 }
 
+=head2 PROTO_ReadSummary
+
+PROTO_ReadSummary
+
+=cut
+
 sub PROTO_ReadSummary {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2, $lastZ, $totalSigns, $dailySigns, $maxSigns);
@@ -215,6 +301,12 @@ sub PROTO_ReadSummary {
 
 	return (0, 0, 0, $lastZ-1, $totalSigns-1, $dailySigns-1, 0, $maxSigns - $dailySigns + 1);
 }
+
+=head2 PROTO_IssueReport
+
+PROTO_IssueReport
+
+=cut
 
 sub PROTO_IssueReport {
 	my($self)  = shift @_;
@@ -251,6 +343,12 @@ sub PROTO_IssueReport {
 
 	return (0);
 }
+
+=head2 errMessage
+
+errMessage
+
+=cut
 
 sub errMessage {
 	my($self)    = shift @_;
@@ -306,6 +404,12 @@ sub errMessage {
 	}
 }
 
+=head2 UTIL_devStatus
+
+UTIL_devStatus
+
+=cut
+
 sub UTIL_devStatus {
 	my($self)   = shift @_;
 	my($status) = sprintf("%08b", shift);
@@ -316,6 +420,12 @@ sub UTIL_devStatus {
 
 	return ($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery);
 }
+
+=head2 UTIL_appStatus
+
+UTIL_appStatus
+
+=cut
 
 sub UTIL_appStatus {
 	my($self)   = shift @_;
@@ -329,6 +439,12 @@ sub UTIL_appStatus {
 	return ($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull);
 }
 
+=head2 UTIL_date6ToHost
+
+UTIL_date6ToHost
+
+=cut
+
 sub UTIL_date6ToHost {
 	my($self) = shift @_;
 	my($var) = shift @_;
@@ -337,6 +453,12 @@ sub UTIL_date6ToHost {
 
 	return $var;
 }
+
+=head2 UTIL_time6toHost
+
+UTIL_time6toHost
+
+=cut
 
 sub UTIL_time6toHost {
 	my($self) = shift @_;
@@ -350,13 +472,6 @@ sub UTIL_time6toHost {
 # Preloaded methods go here.
 
 1;
-=head1 NAME
-
-EAFDSS::Dummy - EAFDSS Driver for a Dummy filesystem based device 
-
-=head1 DESCRIPTION
-
-Read EAFDSS on how to use the module.
 
 =head1 VERSION
 

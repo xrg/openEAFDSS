@@ -7,7 +7,17 @@
 
 package EAFDSS::SDNP;
 
-use 5.006001;
+=head1 NAME
+
+EAFDSS::SDNP - EAFDSS Driver for Micrelec SDNP Devices
+
+=head1 DESCRIPTION
+
+Read EAFDSS on how to use the module.
+
+=cut
+
+use 5.6.0;
 use strict;
 use warnings;
 use POSIX;
@@ -28,6 +38,12 @@ if ( $^O =~ /MSWin32/ ) {
 	$clock_ticks = POSIX::sysconf(&POSIX::_SC_CLK_TCK);
 }
 
+
+=head2 init
+
+init
+
+=cut
 
 sub init {
 	my($class)  = shift @_;
@@ -65,6 +81,12 @@ sub init {
 
 	return $self;
 }
+
+=head2 SendRequest
+
+SendRequest
+
+=cut
 
 sub SendRequest {
 	my($self)   = shift @_;
@@ -525,14 +547,6 @@ sub _getTimer {
 1;
 __END__
 
-=head1 NAME
-
-EAFDSS::SDNP - EAFDSS Driver for Micrelec SDNP Devices
-
-
-=head1 DESCRIPTION
-
-Read EAFDSS on how to use the module.
 
 =head1 VERSION
 

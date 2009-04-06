@@ -7,96 +7,6 @@
 
 package EAFDSS;
 
-use 5.006001;
-use strict;
-use warnings;
-use Carp;
-use Class::Base;
-
-use base qw ( Class::Base );
-
-our($VERSION) = '0.40';
-
-sub init {
-	my($self, $config) = @_;
-
-	if (! exists $config->{DRIVER}) {
-		croak "You need to provide the Driver to use";
-	} else {
-		$self->{DRV}    = substr($config->{DRIVER}, 0, rindex($config->{DRIVER}, "::"));
-		$self->{PARAMS} = substr($config->{DRIVER}, rindex($config->{DRIVER}, "::") + 2);
-		if ($self->{PARAMS} eq '') {
-			croak "You need to provide params to the driver!";
-		}
-	}
-
-	if (! exists $config->{DIR}) {
-		croak "You need to provide the DIR to save the singatures!";
-	} else {
-		$self->{DIR} = $config->{DIR};
-	}
-
-	if (! -e $self->{DIR}) {
-		croak "The directory to save the singatures does not exist!";
-	}
-
-	if (! exists $config->{SN}) {
-		croak "You need to provide the Serial Number of the device!";
-	} else {
-		$self->{SN} = $config->{SN};
-	}
-
-	$self->debug("Loading driver \"$self->{DRV}\"\n");
-	eval qq { require $self->{DRV} };
-	if ($@) {
-		return $self->error("No such driver \"$self->{DRV}\"");
-	}
-
-	$self->debug("Initializing device with \"$self->{PARAMS}\"\n");
-	my($fd) = $self->{DRV}->new(
-			"PARAMS" => $self->{PARAMS},
-			"SN"     => $self->{SN},
-			"DIR"    => $self->{DIR},
-			"DEBUG"  => $self->{_DEBUG}
-		);
-
-	if (!defined $fd) {
-		return $self->error($self->{DRV}->error());
-	}
-
-	return $fd;
-}
-
-sub available_drivers {
-	my(@drivers, $curDir, $curFile, $curDirEAFDSS);
-
-	foreach $curDir (@INC){
-		$curDirEAFDSS = $curDir . "/EAFDSS";
-		next unless -d $curDirEAFDSS;
-
-		opendir(DIR, $curDirEAFDSS) || carp "opendir $curDirEAFDSS: $!\n";
-		foreach $curFile (readdir(EAFDSS::DIR)){
-			next unless $curFile =~ s/\.pm$//;
-			next if $curFile eq 'Base';
-			next if $curFile eq 'Micrelec';
-			push(@drivers, $curFile);
-		}
-		closedir(DIR);
-	}
-
-	return @drivers;
-}
-
-
-sub DESTROY {
-	my($self) = shift;
-}
-
-# Preloaded methods go here.
-
-1;
-__END__
-
 =head1 NAME
 
 EAFDSS - Electronic Fiscal Signature Devices Library
@@ -164,12 +74,23 @@ that are specific to a certain driver.
          `--------------'       |S|... Other drivers
                                 | |...
                                 `-'
+=cut
+
+use 5.6.0;
+use strict;
+use warnings;
+use Carp;
+use Class::Base;
+
+use base qw ( Class::Base );
+
+our($VERSION) = '0.40';
 
 =head1 Methods
 
 First of all you have to initialize the driver handle through the EAFDSS constructor.
 
-=head2 new
+=head2 init
 
 Returns a newly created $dh driver handle. The DRIVER argument is a compination of a driver and
 it's parameters. For instance it could be one of the following:
@@ -206,6 +127,94 @@ useful to developers of the module itself.
   }
 
 Following are the common methods to all the device drivers.
+
+=cut
+
+sub init {
+	my($self, $config) = @_;
+
+	if (! exists $config->{DRIVER}) {
+		croak "You need to provide the Driver to use";
+	} else {
+		$self->{DRV}    = substr($config->{DRIVER}, 0, rindex($config->{DRIVER}, "::"));
+		$self->{PARAMS} = substr($config->{DRIVER}, rindex($config->{DRIVER}, "::") + 2);
+		if ($self->{PARAMS} eq '') {
+			croak "You need to provide params to the driver!";
+		}
+	}
+
+	if (! exists $config->{DIR}) {
+		croak "You need to provide the DIR to save the singatures!";
+	} else {
+		$self->{DIR} = $config->{DIR};
+	}
+
+	if (! -e $self->{DIR}) {
+		croak "The directory to save the singatures does not exist!";
+	}
+
+	if (! exists $config->{SN}) {
+		croak "You need to provide the Serial Number of the device!";
+	} else {
+		$self->{SN} = $config->{SN};
+	}
+
+	$self->debug("Loading driver \"$self->{DRV}\"\n");
+	eval qq { require $self->{DRV} };
+	if ($@) {
+		return $self->error("No such driver \"$self->{DRV}\"");
+	}
+
+	$self->debug("Initializing device with \"$self->{PARAMS}\"\n");
+	my($fd) = $self->{DRV}->new(
+			"PARAMS" => $self->{PARAMS},
+			"SN"     => $self->{SN},
+			"DIR"    => $self->{DIR},
+			"DEBUG"  => $self->{_DEBUG}
+		);
+
+	if (!defined $fd) {
+		return $self->error($self->{DRV}->error());
+	}
+
+	return $fd;
+}
+
+=head2 available_drivers 
+
+available_drivers
+
+=cut
+
+sub available_drivers {
+	my(@drivers, $curDir, $curFile, $curDirEAFDSS);
+
+	foreach $curDir (@INC){
+		$curDirEAFDSS = $curDir . "/EAFDSS";
+		next unless -d $curDirEAFDSS;
+
+		opendir(DIR, $curDirEAFDSS) || carp "opendir $curDirEAFDSS: $!\n";
+		foreach $curFile (readdir(EAFDSS::DIR)){
+			next unless $curFile =~ s/\.pm$//;
+			next if $curFile eq 'Base';
+			next if $curFile eq 'Micrelec';
+			push(@drivers, $curFile);
+		}
+		closedir(DIR);
+	}
+
+	return @drivers;
+}
+
+
+sub DESTROY {
+	my($self) = shift;
+}
+
+# Preloaded methods go here.
+
+1;
+__END__
 
 =head2 $dh->Sign($filename)
 

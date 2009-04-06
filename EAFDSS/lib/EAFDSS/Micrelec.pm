@@ -7,7 +7,17 @@
 
 package EAFDSS::Micrelec;
 
-use 5.006001;
+=head1 NAME
+
+EAFDSS::Micrelec - EAFDSS Base Class Driver for Micrelec drivers (SDNP and SDSP)
+
+=head1 DESCRIPTION
+
+You can't directly use that module. Read EAFDSS manual page on how to use the library. 
+
+=cut
+
+use 5.6.0;
 use strict;
 use warnings;
 use Switch;
@@ -17,6 +27,15 @@ use Class::Base;
 use base qw ( EAFDSS::Base );
 
 our($VERSION) = '0.40';
+
+
+=head1 Methods
+
+=head2 PROTO_DetailSign
+
+PROTO_DetailSign  
+
+=cut
 
 sub PROTO_DetailSign {
 	my($self) = shift @_;
@@ -31,6 +50,12 @@ sub PROTO_DetailSign {
 	}
 }
 
+=head2 PROTO_Query
+
+PROTO_Query
+
+=cut
+
 sub PROTO_Query{
 	my($self) = shift @_;
 
@@ -43,6 +68,12 @@ sub PROTO_Query{
 		return ($self->error());
 	}
 }
+
+=head2 PROTO_GetSign
+
+PROTO_GetSign
+
+=cut
 
 sub PROTO_GetSign {
 	my($self)    = shift @_;
@@ -75,6 +106,12 @@ sub PROTO_GetSign {
 	}
 }
 
+=head2 PROTO_SetHeader
+
+PROTO_SetHeader
+
+=cut
+
 sub PROTO_SetHeader {
 	my($self)    = shift @_;
 	my($headers) = shift @_;
@@ -90,6 +127,12 @@ sub PROTO_SetHeader {
 	}
 }
 
+=head2 PROTO_GetStatus
+
+PROTO_GetStatus
+
+=cut
+
 sub PROTO_GetStatus {
 	my($self) = shift @_;
 
@@ -103,6 +146,12 @@ sub PROTO_GetStatus {
 		return ($self->error());
 	}
 }
+
+=head2 PROTO_GetHeader
+
+PROTO_GetHeader
+
+=cut
 
 sub PROTO_GetHeader {
 	my($self) = shift @_;
@@ -125,6 +174,12 @@ sub PROTO_GetHeader {
 		return (-1);
 	}
 }
+
+=head2 PROTO_ReadTime
+
+PROTO_ReadTime
+
+=cut
 
 sub PROTO_ReadTime {
 	my($self) = shift @_;
@@ -150,6 +205,12 @@ sub PROTO_ReadTime {
 	}
 }
 
+=head2 PROTO_SetTime
+
+PROTO_SetTime
+
+=cut
+
 sub PROTO_SetTime {
 	my($self) = shift @_;
 	my($time) = shift @_;
@@ -171,6 +232,12 @@ sub PROTO_SetTime {
 	}
 }
 
+=head2 PROTO_ReadDeviceID
+
+PROTO_ReadDeviceID
+
+=cut
+
 sub PROTO_ReadDeviceID {
 	my($self) = shift @_;
 
@@ -184,6 +251,12 @@ sub PROTO_ReadDeviceID {
 		return (-1);
 	}
 }
+
+=head2 PROTO_VersionInfo
+
+PROTO_VersionInfo
+
+=cut
 
 sub PROTO_VersionInfo {
 	my($self) = shift @_;
@@ -203,6 +276,12 @@ sub PROTO_VersionInfo {
 	}
 }
 
+=head2 PROTO_DisplayMessage
+
+PROTO_DisplayMessage
+
+=cut
+
 sub PROTO_DisplayMessage {
 	my($self) = shift @_;
 	my($msg)  = shift @_;
@@ -218,6 +297,12 @@ sub PROTO_DisplayMessage {
 	}
 }
 
+=head2 PROTO_ReadSignEntry
+
+PROTO_ReadSignEntry
+
+=cut
+
 sub PROTO_ReadSignEntry {
 	my($self)  = shift @_;
 	my($index) = shift @_;
@@ -232,6 +317,12 @@ sub PROTO_ReadSignEntry {
 		return (-1);
 	}
 }
+
+=head2 PROTO_ReadClosure
+
+PROTO_ReadClosure
+
+=cut
 
 sub PROTO_ReadClosure {
 	my($self)  = shift @_;
@@ -254,6 +345,12 @@ sub PROTO_ReadClosure {
 	return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time), $z, $sn, $closure);
 }
 
+=head2 PROTO_ReadSummary
+
+PROTO_ReadSummary
+
+=cut
+
 sub PROTO_ReadSummary {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
@@ -274,6 +371,12 @@ sub PROTO_ReadSummary {
 	return (hex($replyCode), $status1, $status2, $lastZ, $total, $daily, $signBlock, $remainDaily);
 }
 
+=head2 PROTO_IssueReport
+
+PROTO_IssueReport
+
+=cut
+
 sub PROTO_IssueReport {
 	my($self)  = shift @_;
 	my(%reply, $replyCode, $status1, $status2);
@@ -288,6 +391,12 @@ sub PROTO_IssueReport {
 		return (-1);
 	}
 }
+
+=head2 errMessage
+
+errMessage
+
+=cut
 
 sub errMessage {
 	my($self)    = shift @_;
@@ -345,6 +454,12 @@ sub errMessage {
 	}
 }
 
+=head2 UTIL_devStatus
+
+UTIL_devStatus
+
+=cut
+
 sub UTIL_devStatus {
 	my($self)   = shift @_;
 	my($status) = sprintf("%08b", shift);
@@ -355,6 +470,12 @@ sub UTIL_devStatus {
 
 	return ($busy, $fatal, $paper, $cmos, $printer, $user, $fiscal, $battery);
 }
+
+=head2 UTIL_appStatus
+
+UTIL_appStatus
+
+=cut
 
 sub UTIL_appStatus {
 	my($self)   = shift @_;
@@ -368,6 +489,12 @@ sub UTIL_appStatus {
 	return ($day, $signature, $recovery, $fiscalWarn, $dailyFull, $fiscalFull);
 }
 
+=head2 UTIL_date6ToHost
+
+UTIL_date6ToHost
+
+=cut
+
 sub UTIL_date6ToHost {
 	my($self) = shift @_;
 	my($var) = shift @_;
@@ -376,6 +503,12 @@ sub UTIL_date6ToHost {
 
 	return $var;
 }
+
+=head2 UTIL_time6toHost
+
+UTIL_time6toHost
+
+=cut
 
 sub UTIL_time6toHost {
 	my($self) = shift @_;
@@ -389,13 +522,6 @@ sub UTIL_time6toHost {
 # Preloaded methods go here.
 
 1;
-=head1 NAME
-
-EAFDSS::Micrelec - EAFDSS Base Class Driver for Micrelec drivers (SDNP and SDSP)
-
-=head1 DESCRIPTION
-
-Read EAFDSS on how to use the module.
 
 =head1 VERSION
 

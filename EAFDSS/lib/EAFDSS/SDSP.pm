@@ -7,7 +7,17 @@
 
 package EAFDSS::SDSP;
 
-use 5.006001;
+=head1 NAME
+
+EAFDSS::SDSP - EAFDSS Driver for Micrelec SDSP Devices
+
+=head1 DESCRIPTION
+
+Read EAFDSS on how to use the module.
+
+=cut
+
+use 5.6.0;
 use strict;
 use warnings;
 use POSIX;
@@ -27,6 +37,12 @@ my($control) = {
 		'CAN' => chr(0x18),
 		'ENQ' => chr(0x05)
 	};
+
+=head2 init
+
+init
+
+=cut
 
 sub init {
 	my($class)  = shift @_;
@@ -79,6 +95,12 @@ sub init {
 
 	return $self;
 }
+
+=head2 SendRequest
+
+SendRequest
+
+=cut
 
 sub SendRequest {
 	my($self)   = shift @_;
@@ -214,14 +236,6 @@ sub _checksum {
 1;
 __END__
 
-=head1 NAME
-
-EAFDSS::SDSP - EAFDSS Driver for Micrelec SDSP Devices
-
-
-=head1 DESCRIPTION
-
-Read EAFDSS on how to use the module.
 
 =head1 VERSION
 

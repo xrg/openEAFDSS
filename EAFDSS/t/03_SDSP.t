@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 use ExtUtils::MakeMaker qw( prompt );
+use File::Path;
 use EAFDSS;
 
 if ($ENV{SERIAL_EMULATOR}) {
@@ -32,6 +33,9 @@ my($result);
 $result = $dh->Status();
 ok($result,  "Operation STATUS");
 
+$result = $dh->Report();
+ok($result, "Operation REPORT");
+
 $result = $dh->GetTime();
 ok($result, "Operation GET TIME");
 
@@ -59,9 +63,6 @@ ok($result, "Operation SIGN");
 
 unlink($invoice);
 
-$result = $dh->Report();
-ok($result, "Operation REPORT");
-
-rmdir($sdir);
+rmtree($sdir);
 
 exit;
