@@ -70,12 +70,30 @@ ok(@b, "B Files recreation");
 
 ## Check recreation of C files
 # Init device
+unlink($prm);
+$dh = new EAFDSS(
+	"DRIVER" => sprintf("EAFDSS::Dummy::%s", $prm),
+	"SN"     => $sn,
+	"DIR"    => $sdir,
+	"DEBUG"  => 0
+);
 # Empty signs dir
+rmtree($sdir);
 # Issue a Z report
-# check that there is one A file, one B file, one C file in dir
+$dh->Report();
+# check that there one C file in dir
+opendir(DIR, "$sdir/$sn");
+my(@c) = grep { /_c.txt/ } readdir(DIR);
+closedir DIR;
 # Empty signs dir
+rmtree($sdir);
 # Issue a Z report
+$dh->Report();
 # check that there are 2 C files in dir
+opendir(DIR, "$sdir/$sn");
+@c = grep { /_c.txt/ } readdir(DIR);
+closedir DIR;
+is(scalar @c, 2, "C Files recreation");
 
 ## check recovery handling
 # Init device
