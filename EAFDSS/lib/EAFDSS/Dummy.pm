@@ -61,6 +61,7 @@ sub init {
 		print(DUMMY "CUR_FISCAL = 1\n");
 		print(DUMMY "CUR_SIGN   = 1\n");
 		print(DUMMY "TOTAL_SIGN = 1\n\n");
+		print(DUMMY "CMOS_ERROR = 0\n\n");
 		print(DUMMY "[FISCAL]\n\n");
 		print(DUMMY "[SIGNS]\n");
 		close(DUMMY);
@@ -141,7 +142,14 @@ sub PROTO_GetStatus {
 
 	$self->debug("  [PROTO] Get Status");
 	if (-e $self->{FILENAME}) {
-		return (0, 0, 0);
+		$self->debug("  [SPECIAL] Setting CMOS to error");
+		my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
+		my($cmos) = $dummy->val('MAIN', 'CMOS_ERROR');
+		if ($cmos) {
+			return (0, "00010000", 0);
+		} else {
+			return (0, 0, 0);
+		}
 	} else {
 		return ($self->error());
 	}
@@ -463,6 +471,22 @@ sub UTIL_time6toHost {
 	$var =~ s/(\d\d)(\d\d)(\d\d)/$1$2/;
 
 	return $var;
+}
+
+sub _SetCMOSError {
+	my($self) = shift @_;
+	my($i);
+
+	$self->debug("  [SPECIAL] Setting CMOS to error");
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
+
+	$dummy->newval('MAIN', 'CMOS_ERROR', 1);
+	for ($i=1; $i < $dummy->val('MAIN', 'CUR_SIGN'); $i++) {
+		$dummy->delval('SIGNS', $i);
+	}
+	$dummy->newval('MAIN', 'CUR_SIGN', 1);
+
+	$dummy->RewriteConfig();
 }
 
 # Preloaded methods go here.

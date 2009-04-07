@@ -97,11 +97,40 @@ is(scalar @c, 2, "C Files recreation");
 
 ## check recovery handling
 # Init device
+unlink($prm);
+$dh = new EAFDSS(
+	"DRIVER" => sprintf("EAFDSS::Dummy::%s", $prm),
+	"SN"     => $sn,
+	"DIR"    => $sdir,
+	"DEBUG"  => 0
+);
 # Empty signs dir
+rmtree($sdir);
 # Sign a File
+$result = $dh->Sign($invoice);
 # Force CMOS error
+$dh->_SetCMOSError();
 # Sign a File
-# check that there is one A file, one B file with two signatures in it, one C file in dir
+$result = $dh->Sign($invoice);
+# check that there are two A files, two B file (one with two signatures in it), one C file in dir
+opendir(DIR, "$sdir/$sn");
+my(@a) = grep { /_a.txt/ } readdir(DIR);
+closedir DIR;
+my($bTotalSize) = 0;
+opendir(DIR, "$sdir/$sn");
+@b = grep { /_b.txt/ } readdir(DIR);
+closedir DIR;
+opendir(DIR, "$sdir/$sn");
+@c = grep { /_c.txt/ } readdir(DIR);
+closedir DIR;
+foreach (@b) {
+	$bTotalSize += -s "$sdir/$sn/$_";
+}
+if ( (scalar @a == 2) && (scalar @b == 2) && (scalar @c == 1) ) {
+	pass("Recovery Procedure");
+} else {
+	fail("Recovery Procedure");
+}
 
 unlink($invoice);
 unlink($prm);
