@@ -108,7 +108,8 @@ sub PROTO_GetSign {
 	$invoice .= sprintf("%s%08d%04d%s%s", $self->{SN}, $totalSigns, $dailySigns, $self->UTIL_date6ToHost($date), $self->UTIL_time6toHost($time));
 
 	$sign = uc(sha1_hex($invoice));
-	$dummy->newval('SIGNS', $dailySigns,  $sign);
+	my($sign_entry) = sprintf("%s,%s,%s,%s,%s",  $date, $time, $dailySigns, $totalSigns, $sign);
+	$dummy->newval('SIGNS', $dailySigns,  $sign_entry);
 
 	$dummy->RewriteConfig();
 
@@ -238,14 +239,15 @@ sub PROTO_ReadSignEntry {
 	my($index) = shift @_;
 
 	$self->debug("  [PROTO] Read Sign Entry");
-	my(%reply) = $self->SendRequest(0x21, 0x00, "\$/$index");
+	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
-	if (%reply) {
-		my($replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $closure) = split(/\//, $reply{DATA});
-		return (hex($replyCode), $status1, $status2, $totalSigns, $dailySigns, $date, $time, $sign, $sn, $closure);
+	if ($dummy) {
+		my($date, $time, $dailySigns, $totalSigns, $sign, $closure) = split(/,/, $dummy->val('SIGNS', $index)); 
+		return (0, 1, 1, $totalSigns, $dailySigns, $date, $time, $sign, $self->{SN}, $closure);
 	} else {
 		return (-1);
 	}
+
 }
 
 =head2 PROTO_ReadClosure
@@ -257,23 +259,16 @@ PROTO_ReadClosure
 sub PROTO_ReadClosure {
 	my($self)  = shift @_;
 	my($index) = shift @_;
-	my(%reply, $replyCode, $status1, $status2, $totalSigns, $dailySigns, $date, $time, $z, $sn, $closure, $curZ);
+	my(%reply, $replyCode, $z, $curZ, $date, $time, $dailySigns, $totalSigns, $closure);
 
 	$self->debug("  [PROTO] Read Closure [%d]", $index);
 	my($dummy) = Config::IniFiles->new(-file => $self->{FILENAME});
 
-	my($sec, $min, $hour, $mday, $mon, $year) = localtime();
-	$date = sprintf("%02d%02d%02d", $mday, $mon+1, $year - 100); 
-	$time = sprintf("%02d%02d%02d", $hour, $min, $sec);
-
-	$totalSigns = $dummy->val('MAIN', 'TOTAL_SIGN');
-	$dailySigns = $dummy->val('MAIN', 'CUR_SIGN');
-	$curZ       = $dummy->val('MAIN', 'CUR_FISCAL');
-
+	$curZ = $dummy->val('MAIN', 'CUR_FISCAL');
 	if ($index == 0) {
-		$z = $dummy->val('FISCAL', $curZ-1);
+		($date, $time, $dailySigns, $totalSigns, $z) = split(/,/, $dummy->val('FISCAL', $curZ-1)); 
 	} else {
-		$z = $dummy->val('FISCAL', $index);
+		($date, $time, $dailySigns, $totalSigns, $z) = split(/,/, $dummy->val('FISCAL', $index)); 
 	}
 	$closure    = $curZ-1;
 
@@ -336,7 +331,8 @@ sub PROTO_IssueReport {
 		$dummy->delval('SIGNS', $i);
 	}
 
-	$dummy->newval('FISCAL', $lastZ, $z);
+	my($z_entry) = sprintf("%s,%s,%s,%s,%s",  $date, $time, $dailySigns, $totalSigns, $z);
+	$dummy->newval('FISCAL', $lastZ, $z_entry);
 	$dummy->newval('MAIN', 'CUR_SIGN', 1);
 
 	$dummy->RewriteConfig();
