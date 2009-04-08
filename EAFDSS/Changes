@@ -1,10 +1,18 @@
 Revision history for Perl extension EAFDSS.
 
+Version 0.60	08/04/2009 - Still beta version
+
+  + Added lots of tests
+  + Bug Fixes
+  + Still beta version 
+
+
 Version 0.40	02/04/2009 - Beta version
 
   + More windows friendly version
   + Many  Bug Fixes
   + This is a beta version 
+
 
 Version 0.20	23/03/2009 - API complete version
 

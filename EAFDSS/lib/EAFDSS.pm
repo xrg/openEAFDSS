@@ -74,6 +74,7 @@ that are specific to a certain driver.
          `--------------'       |S|... Other drivers
                                 | |...
                                 `-'
+
 =cut
 
 use 5.6.0;
@@ -84,13 +85,13 @@ use Class::Base;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.40';
+our($VERSION) = '0.60';
 
 =head1 Methods
 
 First of all you have to initialize the driver handle through the EAFDSS constructor.
 
-=head2 init
+=head2 init, new
 
 Returns a newly created $dh driver handle. The DRIVER argument is a combination of a driver and
 it's parameters. For instance it could be one of the following:
@@ -376,7 +377,7 @@ The EAFDSS is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
 
 =head1 VERSION
 
-This is version 0.40. This version is beta. Suitable for developers wishing to be ready when the software will go stable.
+This is version 0.60. This version is beta. Suitable for developers wishing to be ready when the software will go stable.
 
 =head1 AUTHOR
 
