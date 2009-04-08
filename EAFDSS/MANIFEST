@@ -8,7 +8,8 @@ t/00_Common.t
 t/01_Dummy.t
 t/02_SDNP.t
 t/03_SDSP.t
-t/99_Pod.t
+t/97_Pod.t
+t/98_PodCoverage.t
 lib/EAFDSS.pm
 lib/EAFDSS/Base.pm
 lib/EAFDSS/Micrelec.pm

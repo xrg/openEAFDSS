@@ -92,7 +92,7 @@ First of all you have to initialize the driver handle through the EAFDSS constru
 
 =head2 init
 
-Returns a newly created $dh driver handle. The DRIVER argument is a compination of a driver and
+Returns a newly created $dh driver handle. The DRIVER argument is a combination of a driver and
 it's parameters. For instance it could be one of the following:
 
   EAFDSS::SDNP::127.0.0.1
@@ -105,7 +105,7 @@ or
 
   Driver EAFDSS::SDSP::/dev/ttyS0
 
-The SN argument is the Serial number of device we wan't to connect. Each device has it's own unique serial
+The SN argument is the Serial number of device we want to connect. Each device has it's own unique serial
 number. If the device's SN does not much with the provided then you will get an error.
 
 The DIR argument is the directory were the signature files (A, B and C) will be created. Make sure the 
