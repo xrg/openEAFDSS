@@ -183,7 +183,9 @@ sub init {
 
 =head2 available_drivers 
 
-available_drivers
+Returns an array containing the names of drivers currently installed/supported.
+
+  my(@drivers) = EAFDSS->available_drivers();
 
 =cut
 
