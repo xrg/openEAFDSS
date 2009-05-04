@@ -13,7 +13,11 @@ EAFDSS::Dummy - EAFDSS Driver for a Dummy filesystem based device
 
 =head1 DESCRIPTION
 
-Read EAFDSS on how to use the module.
+You can't directly use that module. Read EAFDSS manual page on how to use the library. What
+follows is a list of all the functions that the Dummy driver implements in order to be complete 
+EAFDSS driver. This driver is not to be used on production. It is used for automated test of
+the "Base" Class. Also it could be used during the development of applications without a device 
+or the emulator
 
 =cut
 
@@ -33,8 +37,6 @@ our($VERSION) = '0.60';
 =head1 Methods
 
 =head2 init
-
-init
 
 =cut
 
@@ -73,8 +75,6 @@ sub init {
 =head1 Methods
 
 =head2 PROTO_GetSign
-
-PROTO_GetSign  
 
 =cut
 
@@ -119,8 +119,6 @@ sub PROTO_GetSign {
 
 =head2 PROTO_SetHeader
 
-PROTO_SetHeader
-
 =cut
 
 sub PROTO_SetHeader {
@@ -132,8 +130,6 @@ sub PROTO_SetHeader {
 }
 
 =head2 PROTO_GetStatus
-
-PROTO_GetStatus
 
 =cut
 
@@ -157,8 +153,6 @@ sub PROTO_GetStatus {
 
 =head2 PROTO_GetHeader
 
-PROTO_GetHeader
-
 =cut
 
 sub PROTO_GetHeader {
@@ -169,8 +163,6 @@ sub PROTO_GetHeader {
 }
 
 =head2 PROTO_ReadTime
-
-PROTO_ReadTime
 
 =cut
 
@@ -184,8 +176,6 @@ sub PROTO_ReadTime {
 
 =head2 PROTO_SetTime
 
-PROTO_SetTime
-
 =cut
 
 sub PROTO_SetTime {
@@ -197,8 +187,6 @@ sub PROTO_SetTime {
 }
 
 =head2 PROTO_ReadDeviceID
-
-PROTO_ReadDeviceID
 
 =cut
 
@@ -218,8 +206,6 @@ sub PROTO_ReadDeviceID {
 
 =head2 PROTO_VersionInfo
 
-PROTO_VersionInfo
-
 =cut
 
 sub PROTO_VersionInfo {
@@ -237,8 +223,6 @@ sub PROTO_VersionInfo {
 }
 
 =head2 PROTO_ReadSignEntry
-
-PROTO_ReadSignEntry
 
 =cut
 
@@ -259,8 +243,6 @@ sub PROTO_ReadSignEntry {
 }
 
 =head2 PROTO_ReadClosure
-
-PROTO_ReadClosure
 
 =cut
 
@@ -285,8 +267,6 @@ sub PROTO_ReadClosure {
 
 =head2 PROTO_ReadSummary
 
-PROTO_ReadSummary
-
 =cut
 
 sub PROTO_ReadSummary {
@@ -306,8 +286,6 @@ sub PROTO_ReadSummary {
 }
 
 =head2 PROTO_IssueReport
-
-PROTO_IssueReport
 
 =cut
 
@@ -349,8 +327,6 @@ sub PROTO_IssueReport {
 }
 
 =head2 errMessage
-
-errMessage
 
 =cut
 
@@ -410,8 +386,6 @@ sub errMessage {
 
 =head2 UTIL_devStatus
 
-UTIL_devStatus
-
 =cut
 
 sub UTIL_devStatus {
@@ -426,8 +400,6 @@ sub UTIL_devStatus {
 }
 
 =head2 UTIL_appStatus
-
-UTIL_appStatus
 
 =cut
 
@@ -445,8 +417,6 @@ sub UTIL_appStatus {
 
 =head2 UTIL_date6ToHost
 
-UTIL_date6ToHost
-
 =cut
 
 sub UTIL_date6ToHost {
@@ -459,8 +429,6 @@ sub UTIL_date6ToHost {
 }
 
 =head2 UTIL_time6toHost
-
-UTIL_time6toHost
 
 =cut
 

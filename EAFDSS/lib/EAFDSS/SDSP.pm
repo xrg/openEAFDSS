@@ -13,7 +13,8 @@ EAFDSS::SDSP - EAFDSS Driver for Micrelec SDSP Devices
 
 =head1 DESCRIPTION
 
-Read EAFDSS on how to use the module.
+Read EAFDSS on how to use the module. This module implements the part of the micrelec protocol
+specific to the serial model.
 
 =cut
 
@@ -40,7 +41,7 @@ my($control) = {
 
 =head2 init
 
-init
+The constructor
 
 =cut
 
@@ -98,7 +99,7 @@ sub init {
 
 =head2 SendRequest
 
-SendRequest
+The serial version of SendRequest command.
 
 =cut
 

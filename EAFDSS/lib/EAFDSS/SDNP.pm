@@ -13,7 +13,8 @@ EAFDSS::SDNP - EAFDSS Driver for Micrelec SDNP Devices
 
 =head1 DESCRIPTION
 
-Read EAFDSS on how to use the module.
+Read EAFDSS on how to use the module. This module implements the part of the micrelec protocol
+specific to the ethernet model.
 
 =cut
 
@@ -41,7 +42,7 @@ if ( $^O =~ /MSWin32/ ) {
 
 =head2 init
 
-init
+The constructor
 
 =cut
 
@@ -84,7 +85,7 @@ sub init {
 
 =head2 SendRequest
 
-SendRequest
+The ethernet version of SendRequest command.
 
 =cut
 

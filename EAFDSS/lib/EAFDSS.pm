@@ -181,7 +181,7 @@ sub init {
 	return $fd;
 }
 
-=head2 available_drivers 
+=head2 EAFDSS->available_drivers 
 
 Returns an array containing the names of drivers currently installed/supported.
 
@@ -221,7 +221,7 @@ __END__
 
 =head2 $dh->Sign($filename)
 
-This the main method that will be used most of the time in a typical fiscal day. The aim of  that method
+This the main method that will be used most of the time in a typical fiscal day. The aim of that method
 is to feed the contents of the file provided by the $filename parameter to the EAFDSS device and return
 to the user the signature string.
 
@@ -236,12 +236,45 @@ to the user the signature string.
           exit($errNo);
   }
 
+=head2 $dh->Report
+
+The second most used function is Z report issuing function. At the end of the day ask for the device to
+close the fiscal day by issuing the Z report. It will return the signature of the day.
+
+	my($result) = $dh->Report();
+	if ($result) {
+		printf("%s\n", $result);
+		exit(0);
+	} else {
+		my($errNo)  = $dh->error();
+		my($errMsg) = $dh->errMessage($errNo);
+		printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+		exit($errNo);
+	}
+
 =head2 $dh->Info
 
 This method will return information about the name of the device and version of it's firmware.
 
   my($result) = $dh->Info();
   if ($result) {
+          printf("%s\n", $result);
+          exit(0);
+  } else {
+          my($errNo)  = $dh->error();
+          my($errMsg) = $dh->errMessage($errNo);
+          printf(STDERR "ERROR [0x%02X]: %s\n", $errNo, $errMsg);
+          exit($errNo);
+  }
+
+=head2 $dh->Status
+
+This function return a single line containing the values of the following: serial number, the 
+index of the last Z, the total signatures, the daily signatures, the last signature's data size,
+remaining signatures until the device will force a Z. 
+
+  my($result) = $dh->Status();
+  if ( defined $result && ($result == 0)) {
           printf("%s\n", $result);
           exit(0);
   } else {

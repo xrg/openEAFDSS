@@ -13,7 +13,9 @@ EAFDSS::Base - EAFDSS Base Class Driver for all other drivers
 
 =head1 DESCRIPTION
 
-Read EAFDSS on how to use the module.
+Read EAFDSS on how to use the module. This manual page is only of use if you want
+to find out what it needs to develop a driver for a new EAFDSS device. This Base
+class is to be inherited by any new driver.
 
 =cut
 
@@ -31,7 +33,10 @@ our($VERSION) = '0.60';
 
 =head2 init
 
-init
+This the constructor, were we make sure we get the correct parameters to handle the
+initialization of device object. Things like the signatures directory, the serial
+number of the device. Also parameters special to the type of the device, like ip
+address, or serial port, or baud rate, etc.
 
 =cut
 
@@ -55,7 +60,12 @@ sub init {
 
 =head2 Sign
 
-Sign
+The main job of an EAFDSS device is to produce signatures. Signatures of text files (invoices)
+or text streams. So in that function we make sure to read the text from the caller of the
+function in whatever format. Then we feed the text to the device which in return he gives us
+the signature of that text. The function at tha level handles the saving of the text in the
+"A file" and of the signature in the "B file", according to the rules set by the law for the
+filenames of the files.
 
 =cut
 
@@ -105,24 +115,11 @@ sub Sign {
 
 }
 
-sub _checkCharacters {
-        my($self)    = shift @_;
-	my($invoice) = shift @_;
-	
-	my($c);
-	foreach $c (unpack('C*', $invoice)) {
-		if (grep $_ == ord($c), qw/0 1 2 3 4 5 6 7 8 11 14 15 16 17 18 19 20 21 22 23 24 25 27 28 29 30 31 127 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 173 210 255/ ) {
-                	$self->debug("     Found invalid character [%d]", ord($c));
-			return 1;
-		}
-	}
-
-	return 0;
-}
-
 =head2 Status
 
-Status
+What this function return is a single line containing the values of the following: serial number, 
+the index of the last Z, the total signatures, the daily signatures, the last signature's data size,
+remaining signatures until the device will force a Z. 
 
 =cut
 
@@ -143,7 +140,7 @@ sub Status {
 
 =head2 GetTime
 
-GetTime
+GetTime will return the time in "DD/MM/YY HH:MM:SS" format.
 
 =cut
 
@@ -161,7 +158,7 @@ sub GetTime {
 
 =head2 SetTime
 
-SetTime
+Use this method to set the date/time on the device. Provide the date/time in the "DD/MM/YY HH:MM:SS" format. 
 
 =cut
 
@@ -178,9 +175,92 @@ sub SetTime {
 	}
 }
 
+=head2 Info
+
+This method will return information about the name of the device and version of it's firmware.
+
+=cut
+
+sub Info {
+        my($self) = shift @_;
+
+        $self->debug("Read Info operation");
+	my($reply, $version) = $self->PROTO_VersionInfo();
+	if ($reply == 0) {
+        	return $version;
+	} else {
+		return $self->error($reply);
+	}
+}
+
+=head2 Query
+
+This method should Query to find available devicess [NOT IMPLEMENTED]
+
+=cut
+
+sub Query {
+        my($self) = shift @_;
+
+        $self->debug("Query for devices");
+	my($reply, $devices) = $self->PROTO_Query();
+	if ($reply == 0) {
+		if ($devices) {
+        		return $devices;
+		} else {
+			return $self->error(64+0x05);
+		}
+	} else {
+		return $self->error($reply);
+	}
+}
+
+=head2 GetHeaders 
+
+This method will return the printing headers of the device. The returned array contains 6 couples of values. One for the 
+type of the printing line, and one for the actual printing message.
+
+=cut
+
+sub GetHeaders {
+        my($self) = shift @_;
+
+        $self->debug("Read Headers operation");
+	my($reply, @headers) = $self->PROTO_GetHeader();
+	if ($reply == 0) {
+		return @headers;
+	} else {
+		return $self->error($reply);
+	}
+}
+
+=head2 SetHeaders 
+
+This method will set the printing headers on the device. The headers are to be provided in the
+following format
+
+  Style1/Line1/Style2/Line2/Style3/Line3/Style4/Line4/Style5/Line5/Style6/Line6
+
+=cut
+
+sub SetHeaders {
+        my($self)    = shift @_;
+        my($headers) = shift @_;
+
+        $self->debug("Set Headers operation");
+	my($reply) = $self->PROTO_SetHeader($headers);
+	if ($reply == 0) {
+		return 0;
+	} else {
+		return $self->error($reply);
+	}
+}
+
 =head2 Report
 
-Report
+The second most used function is Z report issuing function. At the end of the day ask for the device to
+close the fiscal day by issuing the Z report. It will return the signature of the day. The function will
+also take care to save the signature in the "C file"
 
 =cut
 
@@ -229,81 +309,19 @@ sub _RecoveryReport {
         return $z;
 }
 
-=head2 Info
-
-Info
-
-=cut
-
-sub Info {
-        my($self) = shift @_;
-
-        $self->debug("Read Info operation");
-	my($reply, $version) = $self->PROTO_VersionInfo();
-	if ($reply == 0) {
-        	return $version;
-	} else {
-		return $self->error($reply);
-	}
-}
-
-=head2 Query
-
-Query
-
-=cut
-
-sub Query {
-        my($self) = shift @_;
-
-        $self->debug("Query for devices");
-	my($reply, $devices) = $self->PROTO_Query();
-	if ($reply == 0) {
-		if ($devices) {
-        		return $devices;
-		} else {
-			return $self->error(64+0x05);
-		}
-	} else {
-		return $self->error($reply);
-	}
-}
-
-=head2 GetHeaders 
-
-GetHeaders
-
-=cut
-
-sub GetHeaders {
-        my($self) = shift @_;
-
-        $self->debug("Read Headers operation");
-	my($reply, @headers) = $self->PROTO_GetHeader();
-	if ($reply == 0) {
-		return @headers;
-	} else {
-		return $self->error($reply);
-	}
-}
-
-=head2 SetHeaders 
-
-SetHeaders
-
-=cut
-
-sub SetHeaders {
+sub _checkCharacters {
         my($self)    = shift @_;
-        my($headers) = shift @_;
-
-        $self->debug("Set Headers operation");
-	my($reply) = $self->PROTO_SetHeader($headers);
-	if ($reply == 0) {
-		return 0;
-	} else {
-		return $self->error($reply);
+	my($invoice) = shift @_;
+	
+	my($c);
+	foreach $c (unpack('C*', $invoice)) {
+		if (grep $_ == ord($c), qw/0 1 2 3 4 5 6 7 8 11 14 15 16 17 18 19 20 21 22 23 24 25 27 28 29 30 31 127 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 173 210 255/ ) {
+                	$self->debug("     Found invalid character [%d]", ord($c));
+			return 1;
+		}
 	}
+
+	return 0;
 }
 
 sub _createSignDir {
@@ -524,7 +542,7 @@ sub DESTROY {
 
 =head2 debug
 
-debug
+This is our handy debuging function 
 
 =cut
 
