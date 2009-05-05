@@ -85,7 +85,7 @@ use Class::Base;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.60';
+our($VERSION) = '0.70';
 
 =head1 Methods
 
@@ -412,7 +412,7 @@ The EAFDSS is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
 
 =head1 VERSION
 
-This is version 0.60. This version is beta. Suitable for developers wishing to be ready when the software will go stable.
+This is version 0.70. This version is beta. Suitable for developers wishing to be ready when the software will go stable.
 
 =head1 AUTHOR
 

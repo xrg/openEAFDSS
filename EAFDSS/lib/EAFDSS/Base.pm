@@ -27,7 +27,7 @@ use Class::Base;
 
 use base qw ( Class::Base );
 
-our($VERSION) = '0.60';
+our($VERSION) = '0.70';
 
 =head1 Methods
 
@@ -573,7 +573,7 @@ __END__
 
 =head1 VERSION
 
-This is version 0.60.
+This is version 0.70.
 
 =head1 AUTHOR
 

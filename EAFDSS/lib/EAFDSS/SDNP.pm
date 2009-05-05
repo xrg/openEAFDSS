@@ -30,7 +30,7 @@ use IO::Socket::INET;
 
 use base qw (EAFDSS::Micrelec );
 
-our($VERSION) = '0.60';
+our($VERSION) = '0.70';
 
 my($clock_ticks);
 if ( $^O =~ /MSWin32/ ) {
@@ -551,7 +551,7 @@ __END__
 
 =head1 VERSION
 
-This is version 0.60.
+This is version 0.70.
 
 =head1 AUTHOR
 
