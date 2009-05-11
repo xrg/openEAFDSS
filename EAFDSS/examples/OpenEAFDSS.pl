@@ -205,6 +205,7 @@ sub init_progie() {
 	}
 
         if ($opt{e}) {$cmd    = $opt{e}}  else {$valid = "FALSE"};
+	if ($ARGV[0]) { foreach(@ARGV) {$cmd = $cmd . ' ' . $_ } }
 
         if ($valid =~ /FALSE/) {
 		print_help();
