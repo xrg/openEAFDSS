@@ -189,7 +189,7 @@ sub init_progie() {
         my(%opt, $valid, $cfg, $name, $cmd, $debug, $driver, $serial, $params, $sDir);
         getopts('hvn:d:s:p:i:e:c:', \%opt);
 
-        if ($opt{c}) {$cfg    = $opt{c}}  else {$cfg = "OpenEAFDSS.conf"}
+        if ($opt{c}) {$cfg    = $opt{c}}  else {$cfg = "/etc/openeafdss/eafdss.conf"}
 	my(%cfg) = ParseConfig(-ConfigFile => $cfg, -LowerCaseNames => 1);
 
         if ($opt{h}) {$valid  = "FALSE"}  else {$valid = "TRUE"};
