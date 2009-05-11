@@ -18,7 +18,7 @@ specific to the serial model.
 
 =cut
 
-use 5.6.0;
+# use 5.6.0;
 use strict;
 use warnings;
 use POSIX;

@@ -21,7 +21,7 @@ or the emulator
 
 =cut
 
-use 5.6.0;
+# use 5.6.0;
 use strict;
 use warnings;
 use Carp;
