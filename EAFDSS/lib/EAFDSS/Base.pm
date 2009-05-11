@@ -1,5 +1,5 @@
 # EAFDSS - Electronic Fiscal Signature Devices Library
-#          Ειδική Ασφαλής Φορολογική Διάταξη Σήμανσης (ΕΑΦΔΣΣ)
+#          Ειδικ�? Ασφαλ�?ς Φορολογικ�? Διάταξη Σ�?μανσης (ΕΑΦΔΣΣ)
 #
 # Copyright (C) 2008 Hasiotis Nikos
 #
@@ -19,7 +19,7 @@ class is to be inherited by any new driver.
 
 =cut
 
-# use 5.6.0;
+use 5.006_000;
 use strict;
 use warnings;
 use Carp;

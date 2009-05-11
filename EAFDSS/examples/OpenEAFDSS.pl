@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # OpenEAFDSS.pl - Electronic Fiscal Signature Devices command line utility
-#                 Ειδική Ασφαλής Φορολογική Διάταξη Σήμανσης (ΕΑΦΔΣΣ)
+#                 Ειδικ�? Ασφαλ�?ς Φορολογικ�? Διάταξη Σ�?μανσης (ΕΑΦΔΣΣ)
 #
 # Copyright (C) 2008 by Hasiotis Nikos
 #
@@ -192,10 +192,10 @@ sub init_progie() {
         if ($opt{c}) {$cfg    = $opt{c}}  else {$cfg = "/etc/openeafdss/eafdss.conf"}
 	my(%cfg) = ParseConfig(-ConfigFile => $cfg, -LowerCaseNames => 1);
 
-        if ($opt{h}) {$valid  = "FALSE"}  else {$valid = "TRUE"};
-        if ($opt{v}) {$debug  = 1      }  else {$debug = 0     };
+	if ($opt{h}) {$valid  = "FALSE"}  else {$valid = "TRUE"};
+	if ($opt{v}) {$debug  = 1      }  else {$debug = 0     };
 
-        if ($opt{n}) {$name   = $opt{n}}  else {$valid = "FALSE"};
+	if ($opt{n}) {$name   = $opt{n}}  else {$valid = "FALSE"};
 	if ($valid ne "FALSE") {
 		$name = lc($name);
 		$driver = $cfg{$name}{"driver"};
@@ -207,25 +207,25 @@ sub init_progie() {
         if ($opt{e}) {$cmd    = $opt{e}}  else {$valid = "FALSE"};
 	if ($ARGV[0]) { foreach(@ARGV) {$cmd = $cmd . ' ' . $_ } }
 
-        if ($valid =~ /FALSE/) {
+	if ($valid =~ /FALSE/) {
 		print_help();
 	}
 
-        if ($opt{d}) {$driver = $opt{d}};
-        if ($opt{s}) {$serial = $opt{s}};
-        if ($opt{p}) {$params = $opt{p}};
-        if ($opt{i}) {$sDir   = $opt{i}};
+	if ($opt{d}) {$driver = $opt{d}};
+	if ($opt{s}) {$serial = $opt{s}};
+	if ($opt{p}) {$params = $opt{p}};
+	if ($opt{i}) {$sDir   = $opt{i}};
 
 	if ( (! defined $driver) && ($valid =~ /TRUE/) ) { printf("No driver defined\n");        exit(0)}; 
 	if ( (! defined $params) && ($valid =~ /TRUE/) ) { printf("No driver params defined\n"); exit(0)}; 
 	if ( (! defined $sDir)   && ($valid =~ /TRUE/) ) { printf("No signs dir defined\n");     exit(0)}; 
 	if ( (! defined $serial) && ($valid =~ /TRUE/) ) { printf("No serial defined\n");        exit(0)}; 
 
-        if ($valid =~ /FALSE/) {
-                exit(0);
-        } else {
-                return($debug, $driver, $params, $serial, $sDir, $cmd);
-        }
+	if ($valid =~ /FALSE/) {
+		exit(0);
+	} else {
+		return($debug, $driver, $params, $serial, $sDir, $cmd);
+	}
 }
 
 sub print_help() {
