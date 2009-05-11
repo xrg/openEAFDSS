@@ -13,8 +13,13 @@ if ($ENV{NET_EMULATOR}) {
 
 my($sdir)    = "./signs-testing";
 my($sn)      = 'ABC02000001';
-my($prm)     = 'miles';
+my($prm)     = '127.0.0.1';
 my($invoice) = "./invoice.txt";
+
+if ($ENV{NET_EMULATOR} =~ /^([A-Z]{3}[0-9]{8})\@(.+)$/ ) {
+	$sn = $1;
+	$prm = $2;
+}
 
 rmdir($sdir);
 mkdir($sdir);
@@ -26,7 +31,7 @@ my($dh) = new EAFDSS(
 	"DEBUG"  => 0
 );
 
-ok(defined $dh, "Defined handle");
+ok($dh, "Defined handle");
 ok($dh->isa("EAFDSS::SDNP"),  "Initialized EAFDSS::SDNP device");
 
 my($result);
