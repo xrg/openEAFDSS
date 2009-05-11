@@ -76,10 +76,12 @@ sub init {
 
 
 	my($reply, $deviceID) = $self->PROTO_ReadDeviceID();
+	$self->debug("  Read device ID");
 	if ( ($reply == 0) && ($deviceID ne $self->{SN}) ) {
 		return $self->error("Serial Number not matching");
 	}
 
+	$self->debug("  Init OK");
 	return $self;
 }
 
