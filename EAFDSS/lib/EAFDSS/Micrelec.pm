@@ -59,12 +59,11 @@ sub PROTO_GetSign {
 
 	my($chunk, %reply);
 	$self->debug("  [PROTO] Get Sign");
-	do {
+	%reply = $self->SendRequest(0x21, 0x00, "{/0");
+	if ($reply{DATA} =~ /^18/) {
+		$self->PROTO_IssueReport();
 		%reply = $self->SendRequest(0x21, 0x00, "{/0");
-		if ($reply{DATA} =~ /^0E/) {
-			sleep 1;
-		}
-	} until ($reply{DATA} !~ /^0E/);
+	}
 
 	if (! exists $reply{OPCODE}) {
 		$reply{OPCODE} = 0x22;
