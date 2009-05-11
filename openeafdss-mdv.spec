@@ -53,6 +53,8 @@ cd EAFDSS
 %make DESTDIR=%{buildroot} install
 mv %{buildroot}/usr/local/share %{buildroot}/usr/
 install -d %{buildroot}%{_var}/spool/openeafdss/infiles
+install -d %{buildroot}%{_var}/spool/openeafdss/signs01
+install -d %{buildroot}%{_var}/spool/openeafdss/signs02
 
 install -d %{buildroot}/%{_sysconfdir}/openeafdss
 install -d %{buildroot}%{_prefix}/libexec/
