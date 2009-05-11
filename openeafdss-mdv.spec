@@ -88,8 +88,8 @@ install examples/OpenEAFDSS.pl %{buildroot}%{_prefix}/libexec/OpenEAFDSS.pl
 %files
 %defattr(0644,root,sys)
 %attr(0640,root,sys)	%config(noreplace)	%{_sysconfdir}/openeafdss/eafdss.conf
-%perl_sitelib/EAFDSS
-%perl_sitelib/EAFDSS.pm
+%attr(0755,root,sys)				%perl_sitelib/EAFDSS
+%attr(0755,root,sys)				%perl_sitelib/EAFDSS.pm
 %attr(0750,root,sys)				%{_prefix}/libexec/OpenEAFDSS.pl
 %attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss
 %attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss/infiles
