@@ -204,7 +204,8 @@ sub init_progie() {
 	        $sDir   = $cfg{$name}{"dir"};
 	}
 
-        if ($opt{e}) {$cmd    = $opt{e}}  else {$valid = "FALSE"};
+	if ($opt{e}) {$cmd = $opt{e}}  else {$valid = "FALSE"};
+	if ($ARGV[0]) { foreach(@ARGV) {$cmd .= ' ' . $_ } };
 
 	if ($valid =~ /FALSE/) {
 		print_help();
