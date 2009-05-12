@@ -82,6 +82,7 @@ sub main {
 			$dbh->do("CREATE TABLE invoices" . 
 				" (id INTEGER PRIMARY KEY, tm,  job_id, user, job_name, copies, options, signature, text);" );
 		}
+		chmod(0774, $SQLITE);
 	}
 	unless ($dbh)  {
 		printf(STDERR "ERROR: [OpenEAFDSS] Cannot connect to sqlite db [%s]! Exiting\n", $SQLITE);
@@ -132,7 +133,7 @@ sub main {
 		my($insert) = "INSERT INTO invoices (tm,  job_id, user, job_name, copies, options, signature, text) " . 
                         " VALUES ( date('now'), '$job_id', '$user', '$job_name', '$copies', '$options', '$signature', '$invoice');";
 
-		print $insert;
+		#print $insert;
 		$dbh->do($insert) or die("NOTICE: [OpenEAFDSS] Insert Error [%s]\n", $dbh->errstr);
 	}
 
