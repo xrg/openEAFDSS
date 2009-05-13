@@ -158,7 +158,8 @@ sub main {
 			);
 
 		if (! $dh) {
-			print(STDERR "ERROR: [OpenEAFDSS]" . EAFDSS->error() ."\n");
+			printf(STDERR "ERROR: [OpenEAFDSS]" . EAFDSS->error() ."\n");
+			printf(STDERR "STATE: [OpenEAFDSS]" . EAFDSS->error() ."\n");
 			exit 1;
 		}
   
@@ -167,9 +168,9 @@ sub main {
 			my($errNo)  = $dh->error();
 			my($errMsg) = $dh->errMessage($errNo);
 			printf(STDERR "ERROR: [OpenEAFDSS] [0x%02X] %s\n", $errNo, $errMsg);
+			printf(STDERR "STATE: [OpenEAFDSS] [0x%02X] %s\n", $errNo, $errMsg);
 			exit($errNo);
 		} else {
-			#printf(STDERR "NOTICE: [OpenEAFDSS] Got sign [%s]\n", $signature);
 			printf(STDERR "NOTICE: [OpenEAFDSS] Got sign [%s...]\n", substr($signature, 0, 20));
 		}
 	}
