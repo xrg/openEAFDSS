@@ -2,8 +2,8 @@ Revision history for Perl extension EAFDSS.
 
 Version 0.80	18/04/2009 - More examples on how to use it
 
-  + 
-  + 
+  + Some bug fixes + enhancements (thanks to P. Christeas)
+  + Added the Type A example
 
 Version 0.70	08/04/2009 - The documented version
 
