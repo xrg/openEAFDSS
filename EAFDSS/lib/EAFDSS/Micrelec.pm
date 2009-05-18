@@ -28,7 +28,7 @@ use Class::Base;
 
 use base qw ( EAFDSS::Base );
 
-our($VERSION) = '0.70';
+our($VERSION) = '0.80';
 
 =head1 Methods
 
@@ -485,7 +485,7 @@ sub UTIL_time6toHost {
 
 =head1 VERSION
 
-This is version 0.70.
+This is version 0.80.
 
 =head1 AUTHOR
 

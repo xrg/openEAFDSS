@@ -20,7 +20,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-# ID: $Id: OpenEAFDSS.pl 73 2009-04-02 00:17:46Z hasiotis $
+# ID: $Id$
 
 use strict;
 use EAFDSS; 
@@ -31,7 +31,7 @@ use Config::IniFiles;
 my(%progie) = ( name      => 'OpenEAFDSS-TypeA-Filter.pl',
                 author    => 'Nikos Hasiotis (hasiotis@gmail.com)',
                 copyright => 'Copyright (c) 2008 Hasiotis Nikos, all rights reserved',
-                version   => '0.39_01');
+                version   => '0.80');
 
 our($debug) = 1;
 
@@ -187,10 +187,7 @@ sub main {
 
 	$dbh->disconnect();
 
-	open(FH, "<", $fname) || exit;
-	while (<FH>) { print $_; };
-	close(FH);
-
+	printf($invoice);
 	printf(" %s \n", $signature);
 
 	rmdir($sandbox);

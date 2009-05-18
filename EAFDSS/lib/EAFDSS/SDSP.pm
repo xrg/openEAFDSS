@@ -28,7 +28,7 @@ use Class::Base;
 
 use base qw (EAFDSS::Micrelec );
 
-our($VERSION) = '0.70';
+our($VERSION) = '0.80';
 
 my($control) = {
 		'ACK' => chr(0x06),
@@ -240,7 +240,7 @@ __END__
 
 =head1 VERSION
 
-This is version 0.70.
+This is version 0.80.
 
 =head1 AUTHOR
 

@@ -16,9 +16,13 @@ lib/EAFDSS/Micrelec.pm
 lib/EAFDSS/SDNP.pm
 lib/EAFDSS/SDSP.pm
 lib/EAFDSS/Dummy.pm
-examples/invoice.txt
+examples/invoice-737.txt
+examples/invoice-iso8859-7.txt
+examples/invoice-utf-8.txt
 examples/OpenEAFDSS.conf
 examples/OpenEAFDSS.pl
 examples/TypeA/OpenEAFDSS-TypeA-Filter.pl
+examples/TypeA/OpenEAFDSS-TypeA-Install.sh
 examples/TypeA/OpenEAFDSS-TypeA.pl
+examples/TypeA/OpenEAFDSS-TypeA.README
 examples/TypeA/OpenEAFDSS-TypeA.ini
