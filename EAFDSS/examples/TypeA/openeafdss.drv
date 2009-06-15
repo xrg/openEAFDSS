@@ -16,8 +16,8 @@ Version 0.1
 
 // Filter application/vnd.cups-postscript 0 -
 // Filter application/vnd.cups-command 100 /path/to/command/filter
-Filter text/plain text/plain-eafdss 10 openeafdss
-Filter text/plain-eafdss application/postscript 33 texttops
+Filter text/plain 100 openeafdss
+//Filter text/plain-eafdss application/postscript 33 texttops
 Filter application/vnd.cups-command 100 openeafdss
 
 // PostScript printer attributes
