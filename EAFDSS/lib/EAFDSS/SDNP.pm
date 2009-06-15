@@ -1,5 +1,5 @@
 # EAFDSS - Electronic Fiscal Signature Devices Library
-#          Ειδικ�? Ασφαλ�?ς Φορολογικ�? Διάταξη Σ�?μανσης (ΕΑΦΔΣΣ)
+#          Ειδική Ασφαλής Φορολογική Διάταξη Σήμανσης (ΕΑΦΔΣΣ)
 #
 # Copyright (C) 2008 Hasiotis Nikos
 #
