@@ -87,8 +87,8 @@ EOF
 
 cat '-' <<EOF >%{buildroot}/%{_sysconfdir}/openeafdss/typea.ini
 [main]
-sqlite=%{buildroot}%{_var}/spool/openeafdss/typeA.sqlite
-abc_dir=%{buildroot}%{_var}/spool/openeafdss/signsA
+sqlite=%{_var}/spool/openeafdss/typeA.sqlite
+abc_dir=%{_var}/spool/openeafdss/signsA
 ; note that the above must be the same dir per device, for all OpenEAFDSS
 ; interfaces.
 
@@ -107,7 +107,7 @@ install -D examples/TypeA/OpenEAFDSS-TypeA-Filter.pl %{buildroot}/usr/lib/cups/f
 # Skip this, we will use the same .ini as the main prog.
 # install OpenEAFDSS-TypeA.ini /etc/OpenEAFDSS/OpenEAFDSS-TypeA.ini
 #
-install -D examples/TypeA/OpenEAFDSS-TypeA.pl ${buildroot}%{_usrbindir}/OpenEAFDSS-TypeA.pl
+install -D examples/TypeA/OpenEAFDSS-TypeA.pl %{buildroot}%{_bindir}/OpenEAFDSS-TypeA.pl
 
 %clean
 [ -n "%{buildroot}" -a "%{buildroot}" != / ] && rm -rf %{buildroot}
@@ -121,13 +121,15 @@ fi
 
 %files
 %defattr(0644,root,sys)
-%attr(0640,root,sys)	%config(noreplace)	%{_sysconfdir}/openeafdss/eafdss.conf
-%attr(0640,root,sys)	%config(noreplace)	%{_sysconfdir}/openeafdss/typea.ini
+%attr(0644,root,sys)	%config(noreplace)	%{_sysconfdir}/openeafdss/eafdss.conf
+%attr(0644,root,sys)	%config(noreplace)	%{_sysconfdir}/openeafdss/typea.ini
 %attr(0755,root,sys)				%perl_sitelib/EAFDSS
 %attr(0755,root,sys)				%perl_sitelib/EAFDSS.pm
-%attr(0750,root,sys)				%{_prefix}/libexec/OpenEAFDSS.pl
+%attr(0755,root,sys)				%{_prefix}/libexec/OpenEAFDSS.pl
 %attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss
 %attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss/infiles
 %attr(0644,root,root)				%{_mandir}/man3/EAFDSS*
-%attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss/signsA
+%attr(0755,lp,sys)	%dir			%{_var}/spool/openeafdss/signsA
+%attr(0750,root,root)				/usr/lib/cups/filter/openeafdss
+%attr(0755,root,root)				%{_bindir}/OpenEAFDSS-TypeA.pl
 
