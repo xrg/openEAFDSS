@@ -29,7 +29,7 @@ use DBI;
 use EAFDSS; 
 
 
-my($cfg) = Config::IniFiles->new(-file => "/etc/OpenEAFDSS/OpenEAFDSS-TypeA.ini", -nocase => 1);
+my($cfg) = Config::IniFiles->new(-file => "/etc/openeafdss/typea.ini", -nocase => 1);
 
 my($ABC_DIR) = $cfg->val('MAIN', 'ABC_DIR', '/tmp/signs');
 my($SQLITE)  = $cfg->val('MAIN', 'SQLITE', '/tmp/eafdss.sqlite');

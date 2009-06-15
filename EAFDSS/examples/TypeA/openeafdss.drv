@@ -1,0 +1,53 @@
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// Specify this is a PostScript printer driver
+DriverType custom
+
+// List the fonts that are supported, in this case all standard fonts
+//Font LiberationMono Expert "(1.0)" Special Disk
+Font *
+
+// Manufacturer, model name, and version
+Manufacturer "Other"
+ModelName "Open EAFDSS virtual Printer"
+Version 0.1
+
+// Filter application/vnd.cups-postscript 0 -
+// Filter application/vnd.cups-command 100 /path/to/command/filter
+Filter text/plain text/plain-eafdss 10 openeafdss
+Filter text/plain-eafdss application/postscript 33 texttops
+Filter application/vnd.cups-command 100 openeafdss
+
+// PostScript printer attributes
+Attribute DefaultColorSpace "" Gray
+Attribute LandscapeOrientation "" Minus90
+Attribute LanguageLevel "" "3"
+Attribute Product "" "(Open EAFDSS)"
+Attribute PSVersion "" "(3010) 0"
+Attribute TTRasterizer "" Type42
+
+// Attribute cupsCommand "" "PrintSelfTestPage eafdss.Stat eafdss.QuerySign eafdss.Reprint eafdss.CloseZ"
+// Supported page sizes
+HWMargins 10mm 10mm 10mm 10mm
+
+*MediaSize A4
+
+ManualCopies no
+
+// Query command for page size
+Attribute "?PageSize" "" "
+      save
+      currentpagedevice /PageSize get aload pop
+      2 copy gt {exch} if (Unknown)
+      23 dict
+              dup [595 842] (A4) put
+              {exch aload pop 4 index sub abs 5 le exch 
+               5 index sub abs 5 le and
+              {exch pop exit} {pop} ifelse
+      } bind forall = flush pop pop
+      restore"
+
+// Specify the name of the PPD file we want to generate
+PCFileName "openeafdss.ppd"

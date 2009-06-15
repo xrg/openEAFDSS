@@ -46,14 +46,23 @@ requirements by Law.
 cd EAFDSS
 %{__perl} Makefile.PL
 %make
+pushd examples/TypeA
+%make
+popd
 
 %install
 [ -n "%{buildroot}" -a "%{buildroot}" != / ] && rm -rf %{buildroot}
 cd EAFDSS
 %make DESTDIR=%{buildroot} install
+
+pushd examples/TypeA
+%make DESTDIR=%{buildroot} install
+popd
+
 mv %{buildroot}/usr/local/share %{buildroot}/usr/
 install -d %{buildroot}%{_var}/spool/openeafdss/infiles
 install -d %{buildroot}%{_var}/spool/openeafdss/signs01
+install -d %{buildroot}%{_var}/spool/openeafdss/signsA
 install -d %{buildroot}%{_var}/spool/openeafdss/signs02
 
 install -d %{buildroot}/%{_sysconfdir}/openeafdss
@@ -76,22 +85,49 @@ cat '-' <<EOF >%{buildroot}/%{_sysconfdir}/openeafdss/eafdss.conf
 
 EOF
 
+cat '-' <<EOF >%{buildroot}/%{_sysconfdir}/openeafdss/typea.ini
+[main]
+sqlite=%{buildroot}%{_var}/spool/openeafdss/typeA.sqlite
+abc_dir=%{buildroot}%{_var}/spool/openeafdss/signsA
+; note that the above must be the same dir per device, for all OpenEAFDSS
+; interfaces.
+
+[device]
+driver=SDNP
+param=miles
+sn=ABC02000001
+
+EOF
+
 install examples/OpenEAFDSS.pl %{buildroot}%{_prefix}/libexec/OpenEAFDSS.pl
+
+# Type A support:
+install -d %{buildroot}%{_var}/spool/openeafdss/eafdss-db
+install -D examples/TypeA/OpenEAFDSS-TypeA-Filter.pl %{buildroot}/usr/lib/cups/filter/openeafdss
+# Skip this, we will use the same .ini as the main prog.
+# install OpenEAFDSS-TypeA.ini /etc/OpenEAFDSS/OpenEAFDSS-TypeA.ini
+#
+install -D examples/TypeA/OpenEAFDSS-TypeA.pl ${buildroot}%{_usrbindir}/OpenEAFDSS-TypeA.pl
 
 %clean
 [ -n "%{buildroot}" -a "%{buildroot}" != / ] && rm -rf %{buildroot}
 
 %post
 # script to run after install
+if [ ! -f /etc/cups/local.types ] || ! (grep -q 'text/plain-eafdss' /etc/cups/local.types) ; then
+	echo 'text/plain-eafdss' >> /etc/cups/local.types
+fi
 
 
 %files
 %defattr(0644,root,sys)
 %attr(0640,root,sys)	%config(noreplace)	%{_sysconfdir}/openeafdss/eafdss.conf
+%attr(0640,root,sys)	%config(noreplace)	%{_sysconfdir}/openeafdss/typea.ini
 %attr(0755,root,sys)				%perl_sitelib/EAFDSS
 %attr(0755,root,sys)				%perl_sitelib/EAFDSS.pm
 %attr(0750,root,sys)				%{_prefix}/libexec/OpenEAFDSS.pl
 %attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss
 %attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss/infiles
 %attr(0644,root,root)				%{_mandir}/man3/EAFDSS*
+%attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss/signsA
 
