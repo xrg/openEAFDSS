@@ -26,6 +26,7 @@ Requires: perl(Digest::SHA1) >= 2.11
 Requires: perl(IO::Socket::INET) >= 1.31
 Requires: perl(Socket) >= 1.78
 Requires: perl(Switch) >= 2.10
+Requires: perl(DBD::SQLite)
 
 Provides:	greek-eafdss
 #Requires: udev
@@ -108,6 +109,7 @@ install -D examples/TypeA/OpenEAFDSS-TypeA-Filter.pl %{buildroot}/usr/lib/cups/f
 # install OpenEAFDSS-TypeA.ini /etc/OpenEAFDSS/OpenEAFDSS-TypeA.ini
 #
 install -D examples/TypeA/OpenEAFDSS-TypeA.pl %{buildroot}%{_bindir}/OpenEAFDSS-TypeA.pl
+install -D examples/TypeA/ppd/openeafdss.ppd  %{buildroot}%{_datadir}/cups/model/openeafdss.ppd
 
 %clean
 [ -n "%{buildroot}" -a "%{buildroot}" != / ] && rm -rf %{buildroot}
@@ -130,6 +132,6 @@ fi
 %attr(0750,lp,sys)	%dir			%{_var}/spool/openeafdss/infiles
 %attr(0644,root,root)				%{_mandir}/man3/EAFDSS*
 %attr(0755,lp,sys)	%dir			%{_var}/spool/openeafdss/signsA
-%attr(0750,root,root)				/usr/lib/cups/filter/openeafdss
+%attr(0755,root,sys)				/usr/lib/cups/filter/openeafdss
 %attr(0755,root,root)				%{_bindir}/OpenEAFDSS-TypeA.pl
-
+						%{_datadir}/cups/model/openeafdss.ppd
