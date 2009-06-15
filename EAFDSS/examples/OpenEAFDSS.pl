@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 # OpenEAFDSS.pl - Electronic Fiscal Signature Devices command line utility
-#                 Ειδικ�? Ασφαλ�?ς Φορολογικ�? Διάταξη Σ�?μανσης (ΕΑΦΔΣΣ)
+#                 Ειδικ�? Ασφαλ�?ς Φορολογικ�? Διάταξη Σ�?μανσης (ΕΑΦΔΣΣ)
 #
 # Copyright (C) 2008 by Hasiotis Nikos
 #
@@ -30,7 +30,7 @@ use Config::General qw(ParseConfig);
 my(%progie) = ( name      => 'OpenEAFDSS.pl',
                 author    => 'Nikos Hasiotis (hasiotis@gmail.com)',
                 copyright => 'Copyright (c) 2008 Hasiotis Nikos, all rights reserved',
-                version   => '0.70');
+                version   => '0.80');
 
 sub main() {
         my($verbal, $driver, $params, $serial, $sDir, $cmd) = init_progie();
@@ -204,8 +204,8 @@ sub init_progie() {
 	        $sDir   = $cfg{$name}{"dir"};
 	}
 
-        if ($opt{e}) {$cmd    = $opt{e}}  else {$valid = "FALSE"};
-	if ($ARGV[0]) { foreach(@ARGV) {$cmd = $cmd . ' ' . $_ } }
+	if ($opt{e}) {$cmd = $opt{e}}  else {$valid = "FALSE"};
+	if ($ARGV[0]) { foreach(@ARGV) {$cmd .= ' ' . $_ } };
 
 	if ($valid =~ /FALSE/) {
 		print_help();

@@ -28,7 +28,7 @@ use Class::Base;
 
 use base qw ( EAFDSS::Base );
 
-our($VERSION) = '0.70';
+our($VERSION) = '0.80';
 
 =head1 Methods
 
@@ -59,12 +59,11 @@ sub PROTO_GetSign {
 
 	my($chunk, %reply);
 	$self->debug("  [PROTO] Get Sign");
-	do {
+	%reply = $self->SendRequest(0x21, 0x00, "{/0");
+	if ($reply{DATA} =~ /^18/) {
+		$self->PROTO_IssueReport();
 		%reply = $self->SendRequest(0x21, 0x00, "{/0");
-		if ($reply{DATA} =~ /^0E/) {
-			sleep 1;
-		}
-	} until ($reply{DATA} !~ /^0E/);
+	}
 
 	if (! exists $reply{OPCODE}) {
 		$reply{OPCODE} = 0x22;
@@ -486,7 +485,7 @@ sub UTIL_time6toHost {
 
 =head1 VERSION
 
-This is version 0.70.
+This is version 0.80.
 
 =head1 AUTHOR
 
